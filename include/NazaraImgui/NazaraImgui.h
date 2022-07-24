@@ -82,15 +82,6 @@ namespace Nz
 
 namespace ImGui
 {
-    namespace NZ
-    {
-        NAZARA_IMGUI_API void Init(Nz::RenderWindow& window, bool loadDefaultFont = true);
-        NAZARA_IMGUI_API void Init(Nz::RenderWindow& window, Nz::RenderTarget& target, bool loadDefaultFont = true);
-        NAZARA_IMGUI_API void Init(Nz::RenderWindow& window, const Nz::Vector2ui& displaySize, bool loadDefaultFont = true);
-
-        NAZARA_IMGUI_API void Shutdown();
-    }
-
     // custom ImGui widgets for SFML stuff
 
     // Image overloads
