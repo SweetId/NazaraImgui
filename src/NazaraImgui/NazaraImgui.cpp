@@ -108,9 +108,11 @@ namespace Nz
 
         ImGui::GetIO().Fonts->TexID = nullptr;
         ImGui::DestroyContext();
+
+        m_fontTexture.reset();
     }
 
-    bool Imgui::Init(Nz::Window& window)
+    bool Imgui::Init(Nz::Window& window, bool bLoadDefaultFont)
     {
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
@@ -128,6 +130,11 @@ namespace Nz
 
         if (!LoadUntexturedPipeline())
             return false;
+
+        if (bLoadDefaultFont)
+        {
+            UpdateFontTexture();
+        }
 
         SetupInputs(window.GetEventHandler());
 
@@ -314,6 +321,26 @@ namespace Nz
         return backend->m_clipboardText.c_str();
     }
 
+    void Imgui::UpdateFontTexture()
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        unsigned char* pixels;
+        int width, height;
+
+        io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+
+        auto renderDevice = Nz::Graphics::Instance()->GetRenderDevice();
+        Nz::TextureInfo texParams;
+        texParams.width = width;
+        texParams.height = height;
+        texParams.pixelFormat = Nz::PixelFormat::RGBA8;
+        texParams.type = Nz::ImageType::E2D;
+        m_fontTexture = renderDevice->InstantiateTexture(texParams);
+        m_fontTexture->Update(pixels, width, height);
+
+        ImTextureID textureID = m_fontTexture.get();
+        io.Fonts->TexID = textureID;
+    }
 
     std::shared_ptr<Nz::Cursor> Imgui::GetMouseCursor(ImGuiMouseCursor cursorType)
     {
@@ -561,66 +588,11 @@ namespace
     ImVec2 getTopLeftAbsolute(const Nz::Rectf& rect);
     ImVec2 getDownRightAbsolute(const Nz::Rectf& rect);
 
-    void RenderDrawLists(Nz::RenderWindow& window, Nz::RenderFrame& frame, ImDrawData* drawData);  // rendering callback function prototype
-
     // Implementation of ImageButton overload
     bool imageButtonImpl(const Nz::Texture& texture, const Nz::Rectf& textureRect, const Nz::Vector2f& size, const int framePadding, const Nz::Color& bgColor, const Nz::Color& tintColor);
 }
 
-namespace Private
-{
-    static std::shared_ptr<Nz::Texture> FontTexture;
-}
-
 namespace ImGui {
-namespace NZ {
-    void UpdateFontTexture();
-
-    void Init(Nz::RenderWindow& window, bool loadDefaultFont) {
-        Init(window, window.GetSize(), loadDefaultFont);
-    }
-
-    void Init(Nz::RenderWindow& window, Nz::RenderTarget& target, bool loadDefaultFont) {
-        Init(window, target.GetSize(), loadDefaultFont);
-    }
-
-void Init(Nz::RenderWindow& window, const Nz::Vector2ui& displaySize, bool loadDefaultFont) {
-
-    Private::FontTexture.reset();
-
-    if (loadDefaultFont) {
-        // this will load default font automatically
-        // No need to call AddDefaultFont
-        UpdateFontTexture();
-    }
-}
-
-void Shutdown() {
-
-    Private::FontTexture.reset();
-}
-
-void UpdateFontTexture() {
-    ImGuiIO& io = ImGui::GetIO();
-    unsigned char* pixels;
-    int width, height;
-
-    io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-
-    auto renderDevice = Nz::Graphics::Instance()->GetRenderDevice();
-    Nz::TextureInfo texParams;
-    texParams.width = width;
-    texParams.height = height;
-    texParams.pixelFormat = Nz::PixelFormat::RGBA8;
-    texParams.type = Nz::ImageType::E2D;
-    Private::FontTexture = renderDevice->InstantiateTexture(texParams);
-    Private::FontTexture->Update(pixels, width, height);
-
-    ImTextureID textureID = Private::FontTexture.get();
-    io.Fonts->TexID = textureID;
-}
-
-}  // end of namespace Nz
 
 /////////////// Image Overloads
 

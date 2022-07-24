@@ -30,7 +30,7 @@ namespace Nz
         Imgui(Config config);
         ~Imgui();
 
-        bool Init(Nz::Window& window);
+        bool Init(Nz::Window& window, bool bLoadDefaultFont = true);
         void Update(Nz::Window& window, float dt);
         void Render(Nz::RenderWindow& window, Nz::RenderFrame& frame);
 
@@ -53,6 +53,7 @@ namespace Nz
 
         bool LoadTexturedPipeline();
         bool LoadUntexturedPipeline();
+        void UpdateFontTexture();
 
         void RenderDrawLists(Nz::RenderWindow& window, Nz::RenderFrame& frame, ImDrawData* drawData);
 
@@ -72,6 +73,8 @@ namespace Nz
         {
             std::shared_ptr<Nz::RenderPipeline> Pipeline;
         } m_untexturedPipeline;
+
+        std::shared_ptr<Nz::Texture> m_fontTexture;
 
         static Imgui* s_instance;
     };
