@@ -39,11 +39,11 @@ static_assert(sizeof(GLuint) <= sizeof(ImTextureID),
 #endif
 
 const char shaderSource_Textured[] =
-#include "Textured.nzsl"
+#include "Textured.nzsl.h"
 ;
 
 const char shaderSource_Untextured[] = 
-#include "Untextured.nzsl"
+#include "Untextured.nzsl.h"
 ;
 
 namespace
