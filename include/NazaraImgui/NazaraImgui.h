@@ -1,6 +1,9 @@
 #pragma once
 
+#include <Nazara/Core/ModuleBase.hpp>
+#include <Nazara/Graphics/Graphics.hpp>
 #include <Nazara/Math/Rect.hpp>
+#include <Nazara/Utils/TypeList.hpp>
 
 #include "Config.h"
 
@@ -8,12 +11,52 @@
 
 namespace Nz
 {
-    class Event;
+    class Cursor;
+    class EventHandler;
     class RenderFrame;
     class RenderTarget;
     class RenderWindow;
     class Texture;
     class Window;
+
+    class Imgui : public Nz::ModuleBase<Imgui>
+    {
+        friend ModuleBase;
+
+    public:
+        using Dependencies = TypeList<Graphics>;
+        struct Config;
+
+        Imgui(Config config);
+        ~Imgui() = default;
+
+        void Init(Nz::Window& window);
+        void Update(Nz::Window& window, float dt);
+
+        // Clipboard functions
+        static void SetClipboardText(void* userData, const char* text);
+        static const char* GetClipboardText(void* userData);
+
+        struct Config
+        {
+            Nz::Vector2f framebufferSize;
+        };
+
+    private:
+        void SetupInputs(Nz::EventHandler& handler);
+        void Update(const Nz::Vector2i& mousePosition, const Nz::Vector2ui& displaySize, float dt);
+
+        // Cursor functions
+        std::shared_ptr<Nz::Cursor> GetMouseCursor(ImGuiMouseCursor cursorType);
+        void UpdateMouseCursor(Nz::Window& window);
+
+        std::string m_clipboardText;
+
+        bool m_bWindowHasFocus;
+        bool m_bMouseMoved;
+
+        static Imgui* s_instance;
+    };
 }
 
 namespace ImGui
@@ -24,9 +67,6 @@ namespace ImGui
         NAZARA_IMGUI_API void Init(Nz::RenderWindow& window, Nz::RenderTarget& target, bool loadDefaultFont = true);
         NAZARA_IMGUI_API void Init(Nz::RenderWindow& window, const Nz::Vector2ui& displaySize, bool loadDefaultFont = true);
 
-        NAZARA_IMGUI_API void ProcessEvent(const Nz::Event& event);
-
-        NAZARA_IMGUI_API void Update(Nz::Window& window, float dt);
         NAZARA_IMGUI_API void Update(const Nz::Vector2i& mousePos, const Nz::Vector2ui& displaySize, float dt);
 
         NAZARA_IMGUI_API void Render(Nz::RenderWindow& window, Nz::RenderFrame& frame);

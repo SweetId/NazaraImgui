@@ -2,7 +2,6 @@
 
 #include <Nazara/Core/DynLib.hpp>
 #include <Nazara/Core/Log.hpp>
-#include <Nazara/Graphics/Graphics.hpp>
 #include <Nazara/Platform/Cursor.hpp>
 #include <Nazara/Platform/Clipboard.hpp>
 #include <Nazara/Platform/Event.hpp>
@@ -48,10 +47,251 @@ const char shaderSource_Untextured[] =
 
 namespace
 {
-    // data
-    static bool s_windowHasFocus = false;
-    static bool s_mouseMoved = false;
+    Nz::SystemCursor ToNz(ImGuiMouseCursor type)
+    {
+        switch (type)
+        {
+        case ImGuiMouseCursor_TextInput: return Nz::SystemCursor::Text;
+        case ImGuiMouseCursor_Hand: return Nz::SystemCursor::Hand;
+#if UNFINISHED_WORK
+        case ImGuiMouseCursor_ResizeAll: return Nz::SystemCursor::SizeAll;
+        case ImGuiMouseCursor_ResizeNS: return Nz::SystemCursor::SizeVertical;
+        case ImGuiMouseCursor_ResizeEW: return Nz::SystemCursor::SizeHorizontal;
+        case ImGuiMouseCursor_ResizeNESW: return Nz::SystemCursor::SizeBottomLeftTopRight;
+        case ImGuiMouseCursor_ResizeNWSE: return Nz::SystemCursor::SizeTopLeftBottomRight;
+#endif
+        case ImGuiMouseCursor_Arrow:
+        default:
+            return Nz::SystemCursor::Default;
 
+        }
+    }
+
+}
+
+
+namespace Nz
+{
+    Imgui* Imgui::s_instance = nullptr;
+
+    Imgui::Imgui(Config config)
+        : ModuleBase("Imgui", this)
+    {
+    
+    }
+
+    void Imgui::Init(Nz::Window& window)
+    {
+        SetupInputs(window.GetEventHandler());
+
+        m_bWindowHasFocus = window.HasFocus();
+    }
+
+    void Imgui::Update(Nz::Window& window, float dt)
+    {
+        // Update OS/hardware mouse cursor if imgui isn't drawing a software cursor
+        UpdateMouseCursor(window);
+
+        if (m_bMouseMoved)
+        {
+            Update(Nz::Mouse::GetPosition(window), window.GetSize(), dt);
+        }
+        else
+        {
+            Update({ 0,0 }, window.GetSize(), dt);
+        }
+
+#if UNFINISHED_WORK
+        if (ImGui::GetIO().MouseDrawCursor) {
+            // Hide OS mouse cursor if imgui is drawing it
+            window.setMouseCursorVisible(false);
+        }
+#endif
+    }
+
+    void Imgui::SetupInputs(Nz::EventHandler& handler)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+
+        // init keyboard mapping
+        io.KeyMap[ImGuiKey_Tab] = (int)Nz::Keyboard::Scancode::Tab;
+        io.KeyMap[ImGuiKey_LeftArrow] = (int)Nz::Keyboard::Scancode::Left;
+        io.KeyMap[ImGuiKey_RightArrow] = (int)Nz::Keyboard::Scancode::Right;
+        io.KeyMap[ImGuiKey_UpArrow] = (int)Nz::Keyboard::Scancode::Up;
+        io.KeyMap[ImGuiKey_DownArrow] = (int)Nz::Keyboard::Scancode::Down;
+        io.KeyMap[ImGuiKey_PageUp] = (int)Nz::Keyboard::Scancode::PageUp;
+        io.KeyMap[ImGuiKey_PageDown] = (int)Nz::Keyboard::Scancode::PageDown;
+        io.KeyMap[ImGuiKey_Home] = (int)Nz::Keyboard::Scancode::Home;
+        io.KeyMap[ImGuiKey_End] = (int)Nz::Keyboard::Scancode::End;
+        io.KeyMap[ImGuiKey_Insert] = (int)Nz::Keyboard::Scancode::Insert;
+        io.KeyMap[ImGuiKey_Delete] = (int)Nz::Keyboard::Scancode::Delete;
+        io.KeyMap[ImGuiKey_Backspace] = (int)Nz::Keyboard::Scancode::Backspace;
+        io.KeyMap[ImGuiKey_Space] = (int)Nz::Keyboard::Scancode::Space;
+        io.KeyMap[ImGuiKey_Enter] = (int)Nz::Keyboard::Scancode::Return;
+        io.KeyMap[ImGuiKey_Escape] = (int)Nz::Keyboard::Scancode::Escape;
+        io.KeyMap[ImGuiKey_A] = (int)Nz::Keyboard::Scancode::A;
+        io.KeyMap[ImGuiKey_C] = (int)Nz::Keyboard::Scancode::C;
+        io.KeyMap[ImGuiKey_V] = (int)Nz::Keyboard::Scancode::V;
+        io.KeyMap[ImGuiKey_X] = (int)Nz::Keyboard::Scancode::X;
+        io.KeyMap[ImGuiKey_Y] = (int)Nz::Keyboard::Scancode::Y;
+        io.KeyMap[ImGuiKey_Z] = (int)Nz::Keyboard::Scancode::Z;
+
+        // Setup event handler
+        handler.OnMouseMoved.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::MouseMoveEvent& event) {
+            if (!m_bWindowHasFocus)
+                return;
+
+            m_bMouseMoved = true;
+        });
+
+        handler.OnMouseButtonPressed.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::MouseButtonEvent& event) {
+            if (!m_bWindowHasFocus)
+                return;
+
+            if (event.button >= Nz::Mouse::Button::Left
+                && event.button <= Nz::Mouse::Button::Right)
+            {
+                ImGuiIO& io = ImGui::GetIO();
+                io.MouseDown[event.button] = true;
+            }
+        });
+
+        handler.OnMouseButtonReleased.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::MouseButtonEvent& event) {
+            if (!m_bWindowHasFocus)
+                return;
+
+            if (event.button >= Nz::Mouse::Button::Left
+                && event.button <= Nz::Mouse::Button::Right)
+            {
+                ImGuiIO& io = ImGui::GetIO();
+                io.MouseDown[event.button] = false;
+            }
+        });
+
+        handler.OnMouseWheelMoved.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::MouseWheelEvent& event) {
+            if (!m_bWindowHasFocus)
+                return;
+
+            ImGuiIO& io = ImGui::GetIO();
+            io.MouseWheel += event.delta;
+        });
+
+        handler.OnKeyPressed.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::KeyEvent& event) {
+            if (!m_bWindowHasFocus)
+                return;
+
+            ImGuiIO& io = ImGui::GetIO();
+            io.KeysDown[(int)event.scancode] = true;
+        });
+
+        handler.OnKeyReleased.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::KeyEvent& event) {
+            if (!m_bWindowHasFocus)
+                return;
+
+            ImGuiIO& io = ImGui::GetIO();
+            io.KeysDown[(int)event.scancode] = false;
+        });
+
+        handler.OnTextEntered.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::TextEvent& event) {
+            if (!m_bWindowHasFocus)
+                return;
+
+            ImGuiIO& io = ImGui::GetIO();
+
+            // Don't handle the event for unprintable characters
+            if (event.character < ' ' || event.character == 127) {
+                return;
+            }
+
+            io.AddInputCharacter(event.character);
+        });
+
+        handler.OnGainedFocus.Connect([this](const Nz::EventHandler*) {
+            m_bWindowHasFocus = true;
+        });
+
+        handler.OnLostFocus.Connect([this](const Nz::EventHandler*) {
+            m_bWindowHasFocus = false;
+        });
+    }
+
+    void Imgui::Update(const Nz::Vector2i& mousePosition, const Nz::Vector2ui& displaySize, float dt)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        io.DisplaySize = ImVec2(displaySize.x * 1.f, displaySize.y * 1.f);
+
+        io.DeltaTime = dt / 1000.f;
+
+        if (m_bWindowHasFocus) {
+            if (io.WantSetMousePos) {
+                Nz::Vector2i mousePos(static_cast<int>(io.MousePos.x),
+                    static_cast<int>(io.MousePos.y));
+                Nz::Mouse::SetPosition(mousePos);
+            }
+            else {
+                io.MousePos = ImVec2(mousePosition.x * 1.f, mousePosition.y * 1.f);
+            }
+        }
+
+        // Update Ctrl, Shift, Alt, Super state
+        io.KeyCtrl = io.KeysDown[(int)Nz::Keyboard::Scancode::LControl] || io.KeysDown[(int)Nz::Keyboard::Scancode::RControl];
+        io.KeyAlt = io.KeysDown[(int)Nz::Keyboard::Scancode::LAlt] || io.KeysDown[(int)Nz::Keyboard::Scancode::RAlt];
+        io.KeyShift = io.KeysDown[(int)Nz::Keyboard::Scancode::LShift] || io.KeysDown[(int)Nz::Keyboard::Scancode::RShift];
+        io.KeySuper = io.KeysDown[(int)Nz::Keyboard::Scancode::LSystem] || io.KeysDown[(int)Nz::Keyboard::Scancode::RSystem];
+
+        assert(io.Fonts->Fonts.Size > 0);  // You forgot to create and set up font
+        // atlas (see createFontTexture)
+
+        ImGui::NewFrame();
+    }
+
+    void Imgui::SetClipboardText(void* userData, const char* text)
+    {
+        Imgui* backend = static_cast<Imgui*>(userData);
+        backend->m_clipboardText = text;
+
+        Nz::Clipboard::SetString(text);
+    }
+
+    const char* Imgui::GetClipboardText(void* userData)
+    {
+        Imgui* backend = static_cast<Imgui*>(userData);
+        backend->m_clipboardText = Nz::Clipboard::GetString();
+        return backend->m_clipboardText.c_str();
+    }
+
+
+    std::shared_ptr<Nz::Cursor> Imgui::GetMouseCursor(ImGuiMouseCursor cursorType)
+    {
+        return Nz::Cursor::Get(ToNz(cursorType));
+    }
+
+    void Imgui::UpdateMouseCursor(Nz::Window& window)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        if ((io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange) == 0) {
+            ImGuiMouseCursor cursor = ImGui::GetMouseCursor();
+            if (io.MouseDrawCursor || cursor == ImGuiMouseCursor_None) {
+#if UNFINISHED_WORK
+                window.setMouseCursorVisible(false);
+#endif
+            }
+            else {
+#if UNFINISHED_WORK
+                window.setMouseCursorVisible(true);
+#endif
+
+                std::shared_ptr<Nz::Cursor> c = GetMouseCursor(cursor);
+                if (!c)
+                    c = GetMouseCursor(ImGuiMouseCursor_Arrow);
+                window.SetCursor(c);
+            }
+        }
+    }
+}
+
+namespace
+{
     // various helper functions
     ImColor toImColor(Nz::Color c);
     ImVec2 getTopLeftAbsolute(const Nz::Rectf& rect);
@@ -61,17 +301,6 @@ namespace
 
     // Implementation of ImageButton overload
     bool imageButtonImpl(const Nz::Texture& texture, const Nz::Rectf& textureRect, const Nz::Vector2f& size, const int framePadding, const Nz::Color& bgColor, const Nz::Color& tintColor);
-
-    // clipboard functions
-    void setClipboardText(void* userData, const char* text);
-    const char* getClipboadText(void* userData);
-    std::string s_clipboardText;
-
-    // mouse cursors
-    void loadMouseCursor(ImGuiMouseCursor imguiCursorType, Nz::SystemCursor nzCursorType);
-    void updateMouseCursor(Nz::Window& window);
-
-    std::shared_ptr<Nz::Cursor> s_mouseCursors[ImGuiMouseCursor_COUNT];
 }
 
 namespace Private
@@ -233,54 +462,16 @@ void Init(Nz::RenderWindow& window, const Nz::Vector2ui& displaySize, bool loadD
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
 
+    io.UserData = Nz::Imgui::Instance();
+
 
     // tell ImGui which features we support
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
     io.BackendPlatformName = "imgui_nazara";
 
-    // init keyboard mapping
-    io.KeyMap[ImGuiKey_Tab] = (int)Nz::Keyboard::Scancode::Tab;
-    io.KeyMap[ImGuiKey_LeftArrow] = (int)Nz::Keyboard::Scancode::Left;
-    io.KeyMap[ImGuiKey_RightArrow] = (int)Nz::Keyboard::Scancode::Right;
-    io.KeyMap[ImGuiKey_UpArrow] = (int)Nz::Keyboard::Scancode::Up;
-    io.KeyMap[ImGuiKey_DownArrow] = (int)Nz::Keyboard::Scancode::Down;
-    io.KeyMap[ImGuiKey_PageUp] = (int)Nz::Keyboard::Scancode::PageUp;
-    io.KeyMap[ImGuiKey_PageDown] = (int)Nz::Keyboard::Scancode::PageDown;
-    io.KeyMap[ImGuiKey_Home] = (int)Nz::Keyboard::Scancode::Home;
-    io.KeyMap[ImGuiKey_End] = (int)Nz::Keyboard::Scancode::End;
-    io.KeyMap[ImGuiKey_Insert] = (int)Nz::Keyboard::Scancode::Insert;
-    io.KeyMap[ImGuiKey_Delete] = (int)Nz::Keyboard::Scancode::Delete;
-    io.KeyMap[ImGuiKey_Backspace] = (int)Nz::Keyboard::Scancode::Backspace;
-    io.KeyMap[ImGuiKey_Space] = (int)Nz::Keyboard::Scancode::Space;
-    io.KeyMap[ImGuiKey_Enter] = (int)Nz::Keyboard::Scancode::Return;
-    io.KeyMap[ImGuiKey_Escape] = (int)Nz::Keyboard::Scancode::Escape;
-    io.KeyMap[ImGuiKey_A] = (int)Nz::Keyboard::Scancode::A;
-    io.KeyMap[ImGuiKey_C] = (int)Nz::Keyboard::Scancode::C;
-    io.KeyMap[ImGuiKey_V] = (int)Nz::Keyboard::Scancode::V;
-    io.KeyMap[ImGuiKey_X] = (int)Nz::Keyboard::Scancode::X;
-    io.KeyMap[ImGuiKey_Y] = (int)Nz::Keyboard::Scancode::Y;
-    io.KeyMap[ImGuiKey_Z] = (int)Nz::Keyboard::Scancode::Z;
-
     // init rendering
     io.DisplaySize = ImVec2(displaySize.x * 1.f, displaySize.y * 1.f);
-
-    // clipboard
-    io.SetClipboardTextFn = setClipboardText;
-    io.GetClipboardTextFn = getClipboadText;
-
-    loadMouseCursor(ImGuiMouseCursor_Arrow, Nz::SystemCursor::Default);
-    loadMouseCursor(ImGuiMouseCursor_TextInput, Nz::SystemCursor::Text);
-#if UNFINISHED_WORK
-    loadMouseCursor(ImGuiMouseCursor_ResizeAll, Nz::SystemCursor::SizeAll);
-    loadMouseCursor(ImGuiMouseCursor_ResizeNS, Nz::SystemCursor::SizeVertical);
-    loadMouseCursor(ImGuiMouseCursor_ResizeEW, Nz::SystemCursor::SizeHorizontal);
-    loadMouseCursor(ImGuiMouseCursor_ResizeNESW,
-                    Nz::Cursor::SizeBottomLeftTopRight);
-    loadMouseCursor(ImGuiMouseCursor_ResizeNWSE,
-                    Nz::Cursor::SizeTopLeftBottomRight);
-#endif
-    loadMouseCursor(ImGuiMouseCursor_Hand, Nz::SystemCursor::Hand);
 
     Private::FontTexture.reset();
 
@@ -289,131 +480,6 @@ void Init(Nz::RenderWindow& window, const Nz::Vector2ui& displaySize, bool loadD
         // No need to call AddDefaultFont
         UpdateFontTexture();
     }
-
-    s_windowHasFocus = window.HasFocus();
-
-    // Setup event handler
-    window.GetEventHandler().OnMouseMoved.Connect([](const Nz::EventHandler*, const Nz::WindowEvent::MouseMoveEvent& event) {
-        if (!s_windowHasFocus)
-            return;
-
-        s_mouseMoved = true;
-    });
-    window.GetEventHandler().OnMouseButtonPressed.Connect([](const Nz::EventHandler*, const Nz::WindowEvent::MouseButtonEvent& event) {
-        if (!s_windowHasFocus)
-            return;
-
-        if (event.button >= Nz::Mouse::Button::Left
-            && event.button <= Nz::Mouse::Button::Right)
-        {
-            ImGuiIO& io = ImGui::GetIO();
-            io.MouseDown[event.button] = true;
-        }
-    });
-    window.GetEventHandler().OnMouseButtonReleased.Connect([](const Nz::EventHandler*, const Nz::WindowEvent::MouseButtonEvent& event) {
-        if (!s_windowHasFocus)
-            return;
-
-        if (event.button >= Nz::Mouse::Button::Left
-            && event.button <= Nz::Mouse::Button::Right)
-        {
-            ImGuiIO& io = ImGui::GetIO();
-            io.MouseDown[event.button] = false;
-        }
-        });
-
-    window.GetEventHandler().OnMouseWheelMoved.Connect([](const Nz::EventHandler*, const Nz::WindowEvent::MouseWheelEvent& event) {
-        if (!s_windowHasFocus)
-            return;
-
-        ImGuiIO& io = ImGui::GetIO();
-        io.MouseWheel += event.delta;
-    });
-    window.GetEventHandler().OnKeyPressed.Connect([](const Nz::EventHandler*, const Nz::WindowEvent::KeyEvent& event) {
-        if (!s_windowHasFocus)
-            return;
-
-        ImGuiIO& io = ImGui::GetIO();
-        io.KeysDown[(int)event.scancode] = true;
-    });
-    window.GetEventHandler().OnKeyReleased.Connect([](const Nz::EventHandler*, const Nz::WindowEvent::KeyEvent& event) {
-        if (!s_windowHasFocus)
-            return;
-
-        ImGuiIO& io = ImGui::GetIO();
-        io.KeysDown[(int)event.scancode] = false;
-    });
-    window.GetEventHandler().OnTextEntered.Connect([](const Nz::EventHandler*, const Nz::WindowEvent::TextEvent& event) {
-        if (!s_windowHasFocus)
-            return;
-
-        ImGuiIO& io = ImGui::GetIO();
-
-        // Don't handle the event for unprintable characters
-        if (event.character < ' ' || event.character == 127) {
-            return;
-        }
-
-        io.AddInputCharacter(event.character);
-    });
-
-    window.GetEventHandler().OnGainedFocus.Connect([](const Nz::EventHandler*) {
-        s_windowHasFocus = true;
-    });
-
-    window.GetEventHandler().OnLostFocus.Connect([](const Nz::EventHandler*) {
-        s_windowHasFocus = false;
-    });
-}
-
-void Update(Nz::Window& window, float dt) {
-    // Update OS/hardware mouse cursor if imgui isn't drawing a software cursor
-    updateMouseCursor(window);
-
-    if (s_mouseMoved) {
-        Update(Nz::Mouse::GetPosition(window), window.GetSize(), dt);
-    }
-    else
-    {
-        {
-            Update({ 0,0 }, window.GetSize(), dt);
-        }
-    }
-
-#if UNFINISHED_WORK
-    if (ImGui::GetIO().MouseDrawCursor) {
-        // Hide OS mouse cursor if imgui is drawing it
-        window.setMouseCursorVisible(false);
-    }
-#endif
-}
-
-void Update(const Nz::Vector2i& mousePos, const Nz::Vector2ui& displaySize, float dt) {
-    ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(displaySize.x * 1.f, displaySize.y * 1.f);
-    
-    io.DeltaTime = dt / 1000.f;
-
-    if (s_windowHasFocus) {
-        if (io.WantSetMousePos) {
-            Nz::Vector2i mousePos(static_cast<int>(io.MousePos.x),
-                                  static_cast<int>(io.MousePos.y));
-            Nz::Mouse::SetPosition(mousePos);
-        } else {
-            io.MousePos = ImVec2(mousePos.x * 1.f, mousePos.y * 1.f);
-        }
-    }
-
-    // Update Ctrl, Shift, Alt, Super state
-    io.KeyCtrl = io.KeysDown[(int)Nz::Keyboard::Scancode::LControl] || io.KeysDown[(int)Nz::Keyboard::Scancode::RControl];
-    io.KeyAlt = io.KeysDown[(int)Nz::Keyboard::Scancode::LAlt] || io.KeysDown[(int)Nz::Keyboard::Scancode::RAlt];
-    io.KeyShift = io.KeysDown[(int)Nz::Keyboard::Scancode::LShift] || io.KeysDown[(int)Nz::Keyboard::Scancode::RShift];
-    io.KeySuper = io.KeysDown[(int)Nz::Keyboard::Scancode::LSystem] || io.KeysDown[(int)Nz::Keyboard::Scancode::RSystem];
-
-    assert(io.Fonts->Fonts.Size > 0);  // You forgot to create and set up font
-                                       // atlas (see createFontTexture)
-
-    ImGui::NewFrame();
 }
 
 void Render(Nz::RenderWindow& window, Nz::RenderFrame& frame) {
@@ -423,10 +489,6 @@ void Render(Nz::RenderWindow& window, Nz::RenderFrame& frame) {
 
 void Shutdown() {
     ImGui::GetIO().Fonts->TexID = 0;
-
-    for (int i = 0; i < ImGuiMouseCursor_COUNT; ++i) {
-        s_mouseCursors[i].reset();
-    }
 
     ImGui::DestroyContext();
 
@@ -670,38 +732,5 @@ void RenderDrawLists(Nz::RenderWindow& window, Nz::RenderFrame& frame, ImDrawDat
     ImTextureID textureID = Private::Backend->GetTextureNativeHandler(&texture);
     return ImGui::ImageButton(textureID, ImVec2(size.x,size.y), uv0, uv1, framePadding, toImColor(bgColor), toImColor(tintColor));
 }*/
-
-void setClipboardText(void* /*userData*/, const char* text) {
-    Nz::Clipboard::SetString(text);
-}
-
-const char* getClipboadText(void* /*userData*/) {
-    s_clipboardText = Nz::Clipboard::GetString();
-    return s_clipboardText.c_str();
-}
-
-void loadMouseCursor(ImGuiMouseCursor imguiCursorType,
-                     Nz::SystemCursor nzCursorType) {
-    s_mouseCursors[imguiCursorType] = Nz::Cursor::Get(nzCursorType);
-}
-
-void updateMouseCursor(Nz::Window& window) {
-    ImGuiIO& io = ImGui::GetIO();
-    if ((io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange) == 0) {
-        ImGuiMouseCursor cursor = ImGui::GetMouseCursor();
-        if (io.MouseDrawCursor || cursor == ImGuiMouseCursor_None) {
-#if UNFINISHED_WORK
-            window.setMouseCursorVisible(false);
-#endif
-        } else {
-#if UNFINISHED_WORK
-            window.setMouseCursorVisible(true);
-#endif
-
-            std::shared_ptr<Nz::Cursor> c = s_mouseCursors[cursor] ? s_mouseCursors[cursor] : s_mouseCursors[ImGuiMouseCursor_Arrow];
-            window.SetCursor(c);
-        }
-    }
-}
 
 }  // end of anonymous namespace
