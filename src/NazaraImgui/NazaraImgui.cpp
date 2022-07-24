@@ -47,7 +47,7 @@ const char shaderSource_Untextured[] =
 
 namespace
 {
-    Nz::SystemCursor ToNz(ImGuiMouseCursor type)
+    inline Nz::SystemCursor ToNz(ImGuiMouseCursor type)
     {
         switch (type)
         {
@@ -67,6 +67,22 @@ namespace
         }
     }
 
+    inline Nz::Vector2f ToNzVec2(ImVec2 v)
+    {
+        return { v.x, v.y };
+    }
+
+    inline Nz::Vector3f ToNzVec3(ImVec2 v)
+    {
+        return { v.x, v.y, 0.f };
+    }
+
+    inline Nz::Color ToNzColor(ImU32 color)
+    {
+        auto c = ImGui::ColorConvertU32ToFloat4(color);
+        return { c.x, c.y, c.z, c.w };
+    }
+
 }
 
 
@@ -77,14 +93,46 @@ namespace Nz
     Imgui::Imgui(Config config)
         : ModuleBase("Imgui", this)
     {
-    
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+        io.UserData = this;
     }
 
-    void Imgui::Init(Nz::Window& window)
+    Imgui::~Imgui()
     {
+        m_untexturedPipeline.Pipeline.reset();
+
+        m_texturedPipeline.TextureSampler.reset();
+        m_texturedPipeline.TextureShaderBinding.reset();
+        m_texturedPipeline.Pipeline.reset();
+
+        ImGui::GetIO().Fonts->TexID = nullptr;
+        ImGui::DestroyContext();
+    }
+
+    bool Imgui::Init(Nz::Window& window)
+    {
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+
+        // tell ImGui which features we support
+        io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
+        io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
+        io.BackendPlatformName = "imgui_nazara";
+
+        // init rendering
+        io.DisplaySize = ImVec2(window.GetSize().x * 1.f, window.GetSize().y * 1.f);
+
+        if (!LoadTexturedPipeline())
+            return false;
+
+        if (!LoadUntexturedPipeline())
+            return false;
+
         SetupInputs(window.GetEventHandler());
 
         m_bWindowHasFocus = window.HasFocus();
+        return true;
     }
 
     void Imgui::Update(Nz::Window& window, float dt)
@@ -245,6 +293,12 @@ namespace Nz
         ImGui::NewFrame();
     }
 
+    void Imgui::Render(Nz::RenderWindow& window, Nz::RenderFrame& frame)
+    {
+        ImGui::Render();
+        RenderDrawLists(window, frame, ImGui::GetDrawData());
+    }
+
     void Imgui::SetClipboardText(void* userData, const char* text)
     {
         Imgui* backend = static_cast<Imgui*>(userData);
@@ -288,43 +342,8 @@ namespace Nz
             }
         }
     }
-}
 
-namespace
-{
-    // various helper functions
-    ImColor toImColor(Nz::Color c);
-    ImVec2 getTopLeftAbsolute(const Nz::Rectf& rect);
-    ImVec2 getDownRightAbsolute(const Nz::Rectf& rect);
-
-    void RenderDrawLists(Nz::RenderWindow& window, Nz::RenderFrame& frame, ImDrawData* draw_data);  // rendering callback function prototype
-
-    // Implementation of ImageButton overload
-    bool imageButtonImpl(const Nz::Texture& texture, const Nz::Rectf& textureRect, const Nz::Vector2f& size, const int framePadding, const Nz::Color& bgColor, const Nz::Color& tintColor);
-}
-
-namespace Private
-{
-    static std::shared_ptr<Nz::Texture> FontTexture;
-
-    static struct
-    {
-        std::shared_ptr<Nz::RenderPipeline> Pipeline;
-        Nz::ShaderBindingPtr TextureShaderBinding;
-        std::shared_ptr<Nz::TextureSampler> TextureSampler;
-    } TexturedPipeline;
-
-    static struct
-    {
-        std::shared_ptr<Nz::RenderPipeline> Pipeline;
-    } UntexturedPipeline;
-}
-
-namespace ImGui {
-namespace NZ {
-    void UpdateFontTexture();
-
-    bool LoadTexturedPipeline()
+    bool Imgui::LoadTexturedPipeline()
     {
         auto renderDevice = Nz::Graphics::Instance()->GetRenderDevice();
 
@@ -346,7 +365,7 @@ namespace NZ {
         }
 
 
-        Private::TexturedPipeline.TextureSampler = renderDevice->InstantiateTextureSampler({});
+        m_texturedPipeline.TextureSampler = renderDevice->InstantiateTextureSampler({});
 
         Nz::RenderPipelineLayoutInfo pipelineLayoutInfo;
 
@@ -357,7 +376,7 @@ namespace NZ {
         textureBinding.type = Nz::ShaderBindingType::Texture;
 
         std::shared_ptr<Nz::RenderPipelineLayout> renderPipelineLayout = renderDevice->InstantiateRenderPipelineLayout(std::move(pipelineLayoutInfo));
-        Private::TexturedPipeline.TextureShaderBinding = renderPipelineLayout->AllocateShaderBinding(1);
+        m_texturedPipeline.TextureShaderBinding = renderPipelineLayout->AllocateShaderBinding(1);
 
         Nz::RenderPipelineInfo pipelineInfo;
         pipelineInfo.pipelineLayout = renderPipelineLayout;
@@ -381,11 +400,11 @@ namespace NZ {
         pipelineVertexBuffer.binding = 0;
         pipelineVertexBuffer.declaration = Nz::VertexDeclaration::Get(Nz::VertexLayout::XYZ_Color_UV);
 
-        Private::TexturedPipeline.Pipeline = renderDevice->InstantiateRenderPipeline(pipelineInfo);
+        m_texturedPipeline.Pipeline = renderDevice->InstantiateRenderPipeline(pipelineInfo);
         return true;
     }
 
-    bool LoadUntexturedPipeline()
+    bool Imgui::LoadUntexturedPipeline()
     {
         auto renderDevice = Nz::Graphics::Instance()->GetRenderDevice();
 
@@ -431,20 +450,131 @@ namespace NZ {
         pipelineVertexBuffer.binding = 0;
         pipelineVertexBuffer.declaration = Nz::VertexDeclaration::Get(Nz::VertexLayout::XYZ_Color_UV);
 
-        Private::UntexturedPipeline.Pipeline = renderDevice->InstantiateRenderPipeline(pipelineInfo);
+        m_untexturedPipeline.Pipeline = renderDevice->InstantiateRenderPipeline(pipelineInfo);
         return true;
     }
 
-    bool LoadBackend(Nz::RenderWindow& window)
+    // Rendering callback
+    void Imgui::RenderDrawLists(Nz::RenderWindow& window, Nz::RenderFrame& frame, ImDrawData* drawData)
     {
-        if (!LoadTexturedPipeline())
-            return false;
+        if (drawData->CmdListsCount == 0)
+            return;
 
-        if (!LoadUntexturedPipeline())
-            return false;
+        ImGuiIO& io = ImGui::GetIO();
+        assert(io.Fonts->TexID != (ImTextureID)NULL);  // You forgot to create and set font texture
 
-        return true;
+        // scale stuff (needed for proper handling of window resize)
+        int fb_width = static_cast<int>(io.DisplaySize.x * io.DisplayFramebufferScale.x);
+        int fb_height = static_cast<int>(io.DisplaySize.y * io.DisplayFramebufferScale.y);
+        if (fb_width == 0 || fb_height == 0)
+            return;
+
+        drawData->ScaleClipRects(io.DisplayFramebufferScale);
+
+        auto renderDevice = Nz::Graphics::Instance()->GetRenderDevice();
+
+        for (int n = 0; n < drawData->CmdListsCount; ++n) {
+            const ImDrawList* cmd_list = drawData->CmdLists[n];
+            const unsigned char* vtx_buffer =
+                (const unsigned char*)&cmd_list->VtxBuffer.front();
+            const ImDrawIdx* idx_buffer = &cmd_list->IdxBuffer.front();
+
+            std::vector<Nz::VertexStruct_XYZ_Color_UV> vertices;
+            vertices.reserve(cmd_list->VtxBuffer.size());
+            for (auto& vertex : cmd_list->VtxBuffer)
+                vertices.push_back({ ToNzVec3(vertex.pos), ToNzColor(vertex.col), ToNzVec2(vertex.uv) });
+
+            size_t size = vertices.size() * sizeof(Nz::VertexStruct_XYZ_Color_UV);
+            auto vertexBuffer = renderDevice->InstantiateBuffer(Nz::BufferType::Vertex, size, Nz::BufferUsage::DeviceLocal | Nz::BufferUsage::Dynamic, vertices.data());
+            auto indexBuffer = renderDevice->InstantiateBuffer(Nz::BufferType::Index, cmd_list->IdxBuffer.size() * sizeof(ImWchar), Nz::BufferUsage::DeviceLocal | Nz::BufferUsage::Dynamic, idx_buffer);
+
+            auto* windowRT = window.GetRenderTarget();
+
+            std::vector<ImDrawCmd> cmdBuffer;
+            cmdBuffer.reserve(cmd_list->CmdBuffer.size());
+            for (auto& cmd : cmd_list->CmdBuffer)
+                cmdBuffer.push_back(cmd);
+
+            frame.Execute([this, windowRT, &frame, fb_width, fb_height, cmdBuffer, vertexBuffer, indexBuffer](Nz::CommandBufferBuilder& builder) {
+                builder.BeginDebugRegion("ImGui", Nz::Color::Green);
+                {
+                    Nz::Recti renderRect(0, 0, fb_width, fb_height);
+
+                    Nz::CommandBufferBuilder::ClearValues clearValues[2];
+                    clearValues[0].color = Nz::Color::Black;
+                    clearValues[1].depth = 1.f;
+                    clearValues[1].stencil = 0;
+
+                    builder.BeginRenderPass(windowRT->GetFramebuffer(frame.GetFramebufferIndex()), windowRT->GetRenderPass(), renderRect, { clearValues[0], clearValues[1] });
+                    {
+                        Nz::UInt64 indexOffset = 0;
+                        for (auto& cmd : cmdBuffer)
+                        {
+                            if (!cmd.UserCallback)
+                            {
+                                auto rect = cmd.ClipRect;
+                                auto count = cmd.ElemCount;
+                                auto texture = static_cast<Nz::Texture*>(cmd.GetTexID());
+
+                                if (nullptr != texture)
+                                {
+                                    m_texturedPipeline.TextureShaderBinding->Update({
+                                        {
+                                            0,
+                                            Nz::ShaderBinding::TextureBinding {
+                                                texture, m_texturedPipeline.TextureSampler.get()
+                                            }
+                                        }
+                                        });
+
+                                    builder.BindPipeline(*m_texturedPipeline.Pipeline);
+                                    builder.BindShaderBinding(1, *m_texturedPipeline.TextureShaderBinding);
+                                }
+                                else
+                                {
+                                    builder.BindPipeline(*m_untexturedPipeline.Pipeline);
+                                }
+
+                                builder.SetViewport(Nz::Recti{ 0, 0, fb_width, fb_height });
+                                builder.SetScissor(Nz::Recti{ int(rect.x), int(rect.y), int(rect.z - rect.x), int(rect.w - rect.y) });// Nz::Recti{ int(rect.x), int(fb_height - rect.w), int(rect.z - rect.x), int(rect.w - rect.y) });
+
+                                builder.BindIndexBuffer(*indexBuffer, Nz::IndexType::U16, indexOffset * sizeof(ImWchar));
+                                builder.BindVertexBuffer(0, *vertexBuffer);
+
+                                builder.DrawIndexed(count);
+                            }
+                            indexOffset += cmd.ElemCount;
+                        }
+                    }
+                    builder.EndRenderPass();
+                }
+                builder.EndDebugRegion();
+                }, Nz::QueueType::Graphics);
+        }
     }
+}
+
+namespace
+{
+    // various helper functions
+    ImColor toImColor(Nz::Color c);
+    ImVec2 getTopLeftAbsolute(const Nz::Rectf& rect);
+    ImVec2 getDownRightAbsolute(const Nz::Rectf& rect);
+
+    void RenderDrawLists(Nz::RenderWindow& window, Nz::RenderFrame& frame, ImDrawData* drawData);  // rendering callback function prototype
+
+    // Implementation of ImageButton overload
+    bool imageButtonImpl(const Nz::Texture& texture, const Nz::Rectf& textureRect, const Nz::Vector2f& size, const int framePadding, const Nz::Color& bgColor, const Nz::Color& tintColor);
+}
+
+namespace Private
+{
+    static std::shared_ptr<Nz::Texture> FontTexture;
+}
+
+namespace ImGui {
+namespace NZ {
+    void UpdateFontTexture();
 
     void Init(Nz::RenderWindow& window, bool loadDefaultFont) {
         Init(window, window.GetSize(), loadDefaultFont);
@@ -456,23 +586,6 @@ namespace NZ {
 
 void Init(Nz::RenderWindow& window, const Nz::Vector2ui& displaySize, bool loadDefaultFont) {
 
-    if (!LoadBackend(window))
-        return;
-
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-
-    io.UserData = Nz::Imgui::Instance();
-
-
-    // tell ImGui which features we support
-    io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
-    io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
-    io.BackendPlatformName = "imgui_nazara";
-
-    // init rendering
-    io.DisplaySize = ImVec2(displaySize.x * 1.f, displaySize.y * 1.f);
-
     Private::FontTexture.reset();
 
     if (loadDefaultFont) {
@@ -482,21 +595,8 @@ void Init(Nz::RenderWindow& window, const Nz::Vector2ui& displaySize, bool loadD
     }
 }
 
-void Render(Nz::RenderWindow& window, Nz::RenderFrame& frame) {
-    ImGui::Render();
-    RenderDrawLists(window, frame, ImGui::GetDrawData());
-}
-
 void Shutdown() {
-    ImGui::GetIO().Fonts->TexID = 0;
 
-    ImGui::DestroyContext();
-
-    Private::TexturedPipeline.TextureSampler.reset();
-    Private::TexturedPipeline.TextureShaderBinding.reset();
-    Private::TexturedPipeline.Pipeline.reset();
-
-    Private::UntexturedPipeline.Pipeline.reset();
     Private::FontTexture.reset();
 }
 
@@ -600,124 +700,6 @@ ImVec2 getTopLeftAbsolute(const Nz::Rectf& rect) {
 ImVec2 getDownRightAbsolute(const Nz::Rectf& rect) {
     ImVec2 pos = ImGui::GetCursorScreenPos();
     return ImVec2(rect.GetCorner(Nz::RectCorner::RightBottom) + Nz::Vector2f(pos.x, pos.y));
-}
-
-inline Nz::Vector2f ToNzVec2(ImVec2 v)
-{
-    return { v.x, v.y };
-}
-
-inline Nz::Vector3f ToNzVec3(ImVec2 v)
-{
-    return { v.x, v.y, 0.f };
-}
-
-inline Nz::Color ToNzColor(ImU32 color)
-{
-    auto c = ImGui::ColorConvertU32ToFloat4(color);
-    return { c.x, c.y, c.z, c.w };
-}
-
-// Rendering callback
-void RenderDrawLists(Nz::RenderWindow& window, Nz::RenderFrame& frame, ImDrawData* draw_data) {
-    ImGui::GetDrawData();
-    if (draw_data->CmdListsCount == 0) {
-        return;
-    }
-    ImGuiIO& io = ImGui::GetIO();
-    assert(io.Fonts->TexID !=
-        (ImTextureID)NULL);  // You forgot to create and set font texture
-
-    // scale stuff (needed for proper handling of window resize)
-    int fb_width =
-        static_cast<int>(io.DisplaySize.x * io.DisplayFramebufferScale.x);
-    int fb_height =
-        static_cast<int>(io.DisplaySize.y * io.DisplayFramebufferScale.y);
-    if (fb_width == 0 || fb_height == 0) {
-        return;
-    }
-    draw_data->ScaleClipRects(io.DisplayFramebufferScale);
-
-    auto renderDevice = Nz::Graphics::Instance()->GetRenderDevice();
-
-    for (int n = 0; n < draw_data->CmdListsCount; ++n) {
-        const ImDrawList* cmd_list = draw_data->CmdLists[n];
-        const unsigned char* vtx_buffer =
-            (const unsigned char*)&cmd_list->VtxBuffer.front();
-        const ImDrawIdx* idx_buffer = &cmd_list->IdxBuffer.front();
-
-        std::vector<Nz::VertexStruct_XYZ_Color_UV> vertices;
-        vertices.reserve(cmd_list->VtxBuffer.size());
-        for (auto& vertex : cmd_list->VtxBuffer)
-            vertices.push_back({ ToNzVec3(vertex.pos), ToNzColor(vertex.col), ToNzVec2(vertex.uv)});
-
-        size_t size = vertices.size() * sizeof(Nz::VertexStruct_XYZ_Color_UV);
-        auto vertexBuffer = renderDevice->InstantiateBuffer(Nz::BufferType::Vertex, size, Nz::BufferUsage::DeviceLocal | Nz::BufferUsage::Dynamic, vertices.data());
-        auto indexBuffer = renderDevice->InstantiateBuffer(Nz::BufferType::Index, cmd_list->IdxBuffer.size() * sizeof(ImWchar), Nz::BufferUsage::DeviceLocal | Nz::BufferUsage::Dynamic, idx_buffer);
-
-        auto* windowRT = window.GetRenderTarget();
-
-        std::vector<ImDrawCmd> cmdBuffer;
-        cmdBuffer.reserve(cmd_list->CmdBuffer.size());
-        for (auto& cmd : cmd_list->CmdBuffer)
-            cmdBuffer.push_back(cmd);
-
-        frame.Execute([windowRT, &frame, fb_width, fb_height, cmdBuffer, vertexBuffer, indexBuffer](Nz::CommandBufferBuilder& builder) {
-            builder.BeginDebugRegion("ImGui", Nz::Color::Green);
-            {
-                Nz::Recti renderRect(0, 0, fb_width, fb_height);
-
-                Nz::CommandBufferBuilder::ClearValues clearValues[2];
-                clearValues[0].color = Nz::Color::Black;
-                clearValues[1].depth = 1.f;
-                clearValues[1].stencil = 0;
-
-                builder.BeginRenderPass(windowRT->GetFramebuffer(frame.GetFramebufferIndex()), windowRT->GetRenderPass(), renderRect, { clearValues[0], clearValues[1] });
-                {
-                    Nz::UInt64 indexOffset = 0;
-                    for (auto& cmd : cmdBuffer)
-                    {
-                        if (!cmd.UserCallback)
-                        {
-                            auto rect = cmd.ClipRect;
-                            auto count = cmd.ElemCount;
-                            auto texture = static_cast<Nz::Texture*>(cmd.GetTexID());
-
-                            if (nullptr != texture)
-                            {
-                                Private::TexturedPipeline.TextureShaderBinding->Update({
-                                {
-                                    0,
-                                    Nz::ShaderBinding::TextureBinding {
-                                        texture, Private::TexturedPipeline.TextureSampler.get()
-                                    }
-                                }
-                                    });
-
-                                builder.BindPipeline(*Private::TexturedPipeline.Pipeline);
-                                builder.BindShaderBinding(1, *Private::TexturedPipeline.TextureShaderBinding);
-                            }
-                            else
-                            {
-                                builder.BindPipeline(*Private::UntexturedPipeline.Pipeline);
-                            }
-
-                            builder.SetViewport(Nz::Recti{ 0, 0, fb_width, fb_height });
-                            builder.SetScissor(Nz::Recti{ int(rect.x), int(rect.y), int(rect.z - rect.x), int(rect.w - rect.y) });// Nz::Recti{ int(rect.x), int(fb_height - rect.w), int(rect.z - rect.x), int(rect.w - rect.y) });
-
-                            builder.BindIndexBuffer(*indexBuffer, Nz::IndexType::U16, indexOffset * sizeof(ImWchar));
-                            builder.BindVertexBuffer(0, *vertexBuffer);
-
-                            builder.DrawIndexed(count);
-                        }
-                        indexOffset += cmd.ElemCount;
-                    }
-                }
-                builder.EndRenderPass();
-            }
-            builder.EndDebugRegion();
-            }, Nz::QueueType::Graphics);
-    }
 }
 
 /*bool imageButtonImpl(const Nz::Texture& texture,

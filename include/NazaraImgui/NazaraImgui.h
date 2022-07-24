@@ -28,10 +28,11 @@ namespace Nz
         struct Config;
 
         Imgui(Config config);
-        ~Imgui() = default;
+        ~Imgui();
 
-        void Init(Nz::Window& window);
+        bool Init(Nz::Window& window);
         void Update(Nz::Window& window, float dt);
+        void Render(Nz::RenderWindow& window, Nz::RenderFrame& frame);
 
         // Clipboard functions
         static void SetClipboardText(void* userData, const char* text);
@@ -50,10 +51,27 @@ namespace Nz
         std::shared_ptr<Nz::Cursor> GetMouseCursor(ImGuiMouseCursor cursorType);
         void UpdateMouseCursor(Nz::Window& window);
 
+        bool LoadTexturedPipeline();
+        bool LoadUntexturedPipeline();
+
+        void RenderDrawLists(Nz::RenderWindow& window, Nz::RenderFrame& frame, ImDrawData* drawData);
+
         std::string m_clipboardText;
 
         bool m_bWindowHasFocus;
         bool m_bMouseMoved;
+
+        struct
+        {
+            std::shared_ptr<Nz::RenderPipeline> Pipeline;
+            Nz::ShaderBindingPtr TextureShaderBinding;
+            std::shared_ptr<Nz::TextureSampler> TextureSampler;
+        } m_texturedPipeline;
+
+        struct
+        {
+            std::shared_ptr<Nz::RenderPipeline> Pipeline;
+        } m_untexturedPipeline;
 
         static Imgui* s_instance;
     };
@@ -66,10 +84,6 @@ namespace ImGui
         NAZARA_IMGUI_API void Init(Nz::RenderWindow& window, bool loadDefaultFont = true);
         NAZARA_IMGUI_API void Init(Nz::RenderWindow& window, Nz::RenderTarget& target, bool loadDefaultFont = true);
         NAZARA_IMGUI_API void Init(Nz::RenderWindow& window, const Nz::Vector2ui& displaySize, bool loadDefaultFont = true);
-
-        NAZARA_IMGUI_API void Update(const Nz::Vector2i& mousePos, const Nz::Vector2ui& displaySize, float dt);
-
-        NAZARA_IMGUI_API void Render(Nz::RenderWindow& window, Nz::RenderFrame& frame);
 
         NAZARA_IMGUI_API void Shutdown();
     }
