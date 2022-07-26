@@ -66,14 +66,17 @@ namespace Nz
         {
             std::shared_ptr<Nz::RenderPipeline> Pipeline;
             std::unordered_map<Nz::Texture*, Nz::ShaderBindingPtr> TextureShaderBindings;
+            Nz::ShaderBindingPtr UboShaderBinding;
             std::shared_ptr<Nz::TextureSampler> TextureSampler;
         } m_texturedPipeline;
 
         struct
         {
             std::shared_ptr<Nz::RenderPipeline> Pipeline;
+            Nz::ShaderBindingPtr UboShaderBinding;
         } m_untexturedPipeline;
 
+        std::shared_ptr<Nz::RenderBuffer> m_uboBuffer;
         std::shared_ptr<Nz::Texture> m_fontTexture;
 
         static Imgui* s_instance;

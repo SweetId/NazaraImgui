@@ -88,6 +88,12 @@ namespace
 
 namespace Nz
 {
+    struct ImguiUbo
+    {
+        float screenWidth;
+        float screenHeight;
+    };
+
     Imgui* Imgui::s_instance = nullptr;
 
     Imgui::Imgui(Config config)
@@ -100,8 +106,10 @@ namespace Nz
 
     Imgui::~Imgui()
     {
+        m_untexturedPipeline.UboShaderBinding.reset();
         m_untexturedPipeline.Pipeline.reset();
 
+        m_texturedPipeline.UboShaderBinding.reset();
         m_texturedPipeline.TextureShaderBindings.clear();
         m_texturedPipeline.TextureSampler.reset();
         m_texturedPipeline.Pipeline.reset();
@@ -396,6 +404,12 @@ namespace Nz
 
         Nz::RenderPipelineLayoutInfo pipelineLayoutInfo;
 
+        auto& uboBinding = pipelineLayoutInfo.bindings.emplace_back();
+        uboBinding.setIndex = 0;
+        uboBinding.bindingIndex = 0;
+        uboBinding.shaderStageFlags = nzsl::ShaderStageType::Vertex;
+        uboBinding.type = Nz::ShaderBindingType::UniformBuffer;
+
         auto& textureBinding = pipelineLayoutInfo.bindings.emplace_back();
         textureBinding.setIndex = 1;
         textureBinding.bindingIndex = 0;
@@ -424,6 +438,19 @@ namespace Nz
         pipelineVertexBuffer.declaration = Nz::VertexDeclaration::Get(Nz::VertexLayout::XYZ_Color_UV);
 
         m_texturedPipeline.Pipeline = renderDevice->InstantiateRenderPipeline(pipelineInfo);
+
+        m_uboBuffer = renderDevice->InstantiateBuffer(Nz::BufferType::Uniform, sizeof(ImguiUbo), Nz::BufferUsage::DeviceLocal | Nz::BufferUsage::Dynamic);
+
+        m_texturedPipeline.UboShaderBinding = renderPipelineLayout->AllocateShaderBinding(0);
+        m_texturedPipeline.UboShaderBinding->Update({
+            {
+                0,
+                Nz::ShaderBinding::UniformBufferBinding {
+                    m_uboBuffer.get(), 0, sizeof(ImguiUbo)
+                }
+            }
+        });
+
         return true;
     }
 
@@ -449,6 +476,13 @@ namespace Nz
         }
 
         Nz::RenderPipelineLayoutInfo pipelineLayoutInfo;
+
+        auto& uboBinding = pipelineLayoutInfo.bindings.emplace_back();
+        uboBinding.setIndex = 0;
+        uboBinding.bindingIndex = 0;
+        uboBinding.shaderStageFlags = nzsl::ShaderStageType::Vertex;
+        uboBinding.type = Nz::ShaderBindingType::UniformBuffer;
+
         std::shared_ptr<Nz::RenderPipelineLayout> renderPipelineLayout = renderDevice->InstantiateRenderPipelineLayout(std::move(pipelineLayoutInfo));
 
         Nz::RenderPipelineInfo pipelineInfo;
@@ -471,6 +505,16 @@ namespace Nz
         pipelineVertexBuffer.declaration = Nz::VertexDeclaration::Get(Nz::VertexLayout::XYZ_Color_UV);
 
         m_untexturedPipeline.Pipeline = renderDevice->InstantiateRenderPipeline(pipelineInfo);
+
+        m_untexturedPipeline.UboShaderBinding = renderPipelineLayout->AllocateShaderBinding(0);
+        m_untexturedPipeline.UboShaderBinding->Update({
+            {
+                0,
+                Nz::ShaderBinding::UniformBufferBinding {
+                    m_uboBuffer.get(), 0, sizeof(ImguiUbo)
+                }
+            }
+        });
         return true;
     }
 
@@ -488,6 +532,22 @@ namespace Nz
         int fb_height = static_cast<int>(io.DisplaySize.y * io.DisplayFramebufferScale.y);
         if (fb_width == 0 || fb_height == 0)
             return;
+
+        ImguiUbo ubo{ fb_width / 2.f, fb_height / 2.f };
+        auto& allocation = frame.GetUploadPool().Allocate(sizeof(ImguiUbo));
+
+        std::memcpy(allocation.mappedPtr, &ubo, sizeof(ImguiUbo));
+
+        frame.Execute([&](Nz::CommandBufferBuilder& builder)
+            {
+                builder.BeginDebugRegion("UBO Update", Nz::Color::Yellow);
+                {
+                    builder.PreTransferBarrier();
+                    builder.CopyBuffer(allocation, m_uboBuffer.get());
+                    builder.PostTransferBarrier();
+                }
+                builder.EndDebugRegion();
+            }, Nz::QueueType::Transfer);
 
         drawData->ScaleClipRects(io.DisplayFramebufferScale);
 
@@ -553,11 +613,13 @@ namespace Nz
                                     }
 
                                     builder.BindPipeline(*m_texturedPipeline.Pipeline);
+                                    builder.BindShaderBinding(0, *m_texturedPipeline.UboShaderBinding);
                                     builder.BindShaderBinding(1, *m_texturedPipeline.TextureShaderBindings[texture]);
                                 }
                                 else
                                 {
                                     builder.BindPipeline(*m_untexturedPipeline.Pipeline);
+                                    builder.BindShaderBinding(0, *m_untexturedPipeline.UboShaderBinding);
                                 }
 
                                 builder.SetViewport(Nz::Recti{ 0, 0, fb_width, fb_height });
