@@ -102,8 +102,8 @@ namespace Nz
     {
         m_untexturedPipeline.Pipeline.reset();
 
+        m_texturedPipeline.TextureShaderBindings.clear();
         m_texturedPipeline.TextureSampler.reset();
-        m_texturedPipeline.TextureShaderBinding.reset();
         m_texturedPipeline.Pipeline.reset();
 
         ImGui::GetIO().Fonts->TexID = nullptr;
@@ -403,25 +403,21 @@ namespace Nz
         textureBinding.type = Nz::ShaderBindingType::Texture;
 
         std::shared_ptr<Nz::RenderPipelineLayout> renderPipelineLayout = renderDevice->InstantiateRenderPipelineLayout(std::move(pipelineLayoutInfo));
-        m_texturedPipeline.TextureShaderBinding = renderPipelineLayout->AllocateShaderBinding(1);
 
         Nz::RenderPipelineInfo pipelineInfo;
         pipelineInfo.pipelineLayout = renderPipelineLayout;
-        pipelineInfo.faceCulling = true;
-
-        pipelineInfo.depthBuffer = true;
         pipelineInfo.shaderModules.emplace_back(shader);
 
-        pipelineInfo.depthWrite = false;
+        pipelineInfo.depthBuffer = false;
+        pipelineInfo.faceCulling = false;
+        pipelineInfo.scissorTest = true;
+
         pipelineInfo.blending = true;
-        pipelineInfo.depthCompare = Nz::RendererComparison::Always;
-        pipelineInfo.blend.modeAlpha = Nz::BlendEquation::Max;
+        pipelineInfo.blend.modeAlpha = Nz::BlendEquation::Add;
         pipelineInfo.blend.srcColor = Nz::BlendFunc::SrcAlpha;
         pipelineInfo.blend.dstColor = Nz::BlendFunc::InvSrcAlpha;
         pipelineInfo.blend.srcAlpha = Nz::BlendFunc::One;
         pipelineInfo.blend.dstAlpha = Nz::BlendFunc::Zero;
-        pipelineInfo.faceCulling = false;
-        pipelineInfo.scissorTest = true;
 
         auto& pipelineVertexBuffer = pipelineInfo.vertexBuffers.emplace_back();
         pipelineVertexBuffer.binding = 0;
@@ -457,21 +453,18 @@ namespace Nz
 
         Nz::RenderPipelineInfo pipelineInfo;
         pipelineInfo.pipelineLayout = renderPipelineLayout;
-        pipelineInfo.faceCulling = true;
-
-        pipelineInfo.depthBuffer = true;
         pipelineInfo.shaderModules.emplace_back(shader);
 
-        pipelineInfo.depthWrite = false;
+        pipelineInfo.depthBuffer = false;
+        pipelineInfo.faceCulling = false;
+        pipelineInfo.scissorTest = true;
+
         pipelineInfo.blending = true;
-        pipelineInfo.depthCompare = Nz::RendererComparison::Always;
-        pipelineInfo.blend.modeAlpha = Nz::BlendEquation::Max;
+        pipelineInfo.blend.modeAlpha = Nz::BlendEquation::Add;
         pipelineInfo.blend.srcColor = Nz::BlendFunc::SrcAlpha;
         pipelineInfo.blend.dstColor = Nz::BlendFunc::InvSrcAlpha;
         pipelineInfo.blend.srcAlpha = Nz::BlendFunc::One;
         pipelineInfo.blend.dstAlpha = Nz::BlendFunc::Zero;
-        pipelineInfo.faceCulling = false;
-        pipelineInfo.scissorTest = true;
 
         auto& pipelineVertexBuffer = pipelineInfo.vertexBuffers.emplace_back();
         pipelineVertexBuffer.binding = 0;
@@ -545,17 +538,22 @@ namespace Nz
 
                                 if (nullptr != texture)
                                 {
-                                    m_texturedPipeline.TextureShaderBinding->Update({
-                                        {
-                                            0,
-                                            Nz::ShaderBinding::TextureBinding {
-                                                texture, m_texturedPipeline.TextureSampler.get()
+                                    if (std::end(m_texturedPipeline.TextureShaderBindings) == m_texturedPipeline.TextureShaderBindings.find(texture))
+                                    {
+                                        auto binding = m_texturedPipeline.Pipeline->GetPipelineInfo().pipelineLayout->AllocateShaderBinding(1);
+                                        binding->Update({
+                                            {
+                                                0,
+                                                Nz::ShaderBinding::TextureBinding {
+                                                    texture, m_texturedPipeline.TextureSampler.get()
+                                                }
                                             }
-                                        }
                                         });
+                                        m_texturedPipeline.TextureShaderBindings[texture] = std::move(binding);
+                                    }
 
                                     builder.BindPipeline(*m_texturedPipeline.Pipeline);
-                                    builder.BindShaderBinding(1, *m_texturedPipeline.TextureShaderBinding);
+                                    builder.BindShaderBinding(1, *m_texturedPipeline.TextureShaderBindings[texture]);
                                 }
                                 else
                                 {
@@ -583,108 +581,91 @@ namespace Nz
 
 namespace
 {
-    // various helper functions
-    ImColor toImColor(Nz::Color c);
-    ImVec2 getTopLeftAbsolute(const Nz::Rectf& rect);
-    ImVec2 getDownRightAbsolute(const Nz::Rectf& rect);
+    namespace
+    {
+        ImColor toImColor(Nz::Color c)
+        {
+            return ImColor(c.r, c.g, c.b, c.a);
+        }
+        ImVec2 getTopLeftAbsolute(const Nz::Rectf& rect)
+        {
+            ImVec2 pos = ImGui::GetCursorScreenPos();
+            return ImVec2(rect.GetCorner(Nz::RectCorner::LeftTop) + Nz::Vector2f(pos.x, pos.y));
+        }
+        ImVec2 getDownRightAbsolute(const Nz::Rectf& rect)
+        {
+            ImVec2 pos = ImGui::GetCursorScreenPos();
+            return ImVec2(rect.GetCorner(Nz::RectCorner::RightBottom) + Nz::Vector2f(pos.x, pos.y));
+        }
 
-    // Implementation of ImageButton overload
-    bool imageButtonImpl(const Nz::Texture& texture, const Nz::Rectf& textureRect, const Nz::Vector2f& size, const int framePadding, const Nz::Color& bgColor, const Nz::Color& tintColor);
+        bool imageButtonImpl(const Nz::Texture* texture, const Nz::Rectf& textureRect, const Nz::Vector2f& size, const int framePadding, const Nz::Color& bgColor, const Nz::Color& tintColor)
+        {
+            Nz::Vector2f textureSize(texture->GetSize().x * 1.f, texture->GetSize().y * 1.f);
+            ImVec2 uv0(textureRect.GetCorner(Nz::RectCorner::LeftTop) / textureSize);
+            ImVec2 uv1(textureRect.GetCorner(Nz::RectCorner::RightBottom) / textureSize);
+
+            return ImGui::ImageButton((ImTextureID)texture, ImVec2(size.x, size.y), uv0, uv1, framePadding, toImColor(bgColor), toImColor(tintColor));
+        }
+    }  // end of anonymous namespace
 }
 
-namespace ImGui {
+namespace ImGui
+{
+    /////////////// Image Overloads
+    void Image(const Nz::Texture* texture, const Nz::Color& tintColor, const Nz::Color& borderColor)
+    {
+        Image(texture, Nz::Vector2f(texture->GetSize().x * 1.f, texture->GetSize().y * 1.f), tintColor, borderColor);
+    }
 
-/////////////// Image Overloads
+    void Image(const Nz::Texture* texture, const Nz::Vector2f& size, const Nz::Color& tintColor, const Nz::Color& borderColor)
+    {
+        ImGui::Image((ImTextureID)texture, ImVec2(size.x, size.y), ImVec2(0, 0), ImVec2(1, 1), toImColor(tintColor), toImColor(borderColor));
+    }
 
-/*void Image(const Nz::Texture& texture, const Nz::Color& tintColor,
-           const Nz::Color& borderColor) {
-    Image(texture, Nz::Vector2f(texture.GetSize().x * 1.f, texture.GetSize().y * 1.f), tintColor, borderColor);
-}
+    void Image(const Nz::Texture* texture, const Nz::Rectf& textureRect, const Nz::Color& tintColor, const Nz::Color& borderColor)
+    {
+        Image(texture, Nz::Vector2f(std::abs(textureRect.width), std::abs(textureRect.height)), textureRect, tintColor, borderColor);
+    }
 
-void Image(const Nz::Texture& texture, const Nz::Vector2f& size,
-           const Nz::Color& tintColor, const Nz::Color& borderColor) {
-    ImTextureID textureID = Private::Backend->GetTextureNativeHandler(&texture);
-    
-    ImGui::Image(textureID, ImVec2(size.x,size.y), ImVec2(0, 0), ImVec2(1, 1), toImColor(tintColor), toImColor(borderColor));
-}
+    void Image(const Nz::Texture* texture, const Nz::Vector2f& size, const Nz::Rectf& textureRect, const Nz::Color& tintColor, const Nz::Color& borderColor)
+    {
+        Nz::Vector2f textureSize(texture->GetSize().x * 1.f, texture->GetSize().y * 1.f);
+        ImVec2 uv0(textureRect.GetCorner(Nz::RectCorner::LeftTop) / textureSize);
+        ImVec2 uv1(textureRect.GetCorner(Nz::RectCorner::RightBottom) / textureSize);
 
-void Image(const Nz::Texture& texture, const Nz::Rectf& textureRect,
-           const Nz::Color& tintColor, const Nz::Color& borderColor) {
-    Image(texture, Nz::Vector2f(std::abs(textureRect.width), std::abs(textureRect.height)), textureRect, tintColor, borderColor);
-}
+        ImGui::Image((ImTextureID)texture, ImVec2(size.x, size.y), uv0, uv1, toImColor(tintColor), toImColor(borderColor));
+    }
 
-void Image(const Nz::Texture& texture, const Nz::Vector2f& size,
-           const Nz::Rectf& textureRect, const Nz::Color& tintColor,
-           const Nz::Color& borderColor) {
-    Nz::Vector2f textureSize(texture.GetSize().x * 1.f, texture.GetSize().y * 1.f);
-    ImVec2 uv0(textureRect.GetCorner(Nz::RectCorner::LeftTop) / textureSize);
-    ImVec2 uv1(textureRect.GetCorner(Nz::RectCorner::RightBottom) / textureSize);
+    /////////////// Image Button Overloads
+    bool ImageButton(const Nz::Texture* texture, const int framePadding, const Nz::Color& bgColor, const Nz::Color& tintColor)
+    {
+        return ImageButton(texture, Nz::Vector2f(texture->GetSize().x * 1.f, texture->GetSize().y * 1.f), framePadding, bgColor, tintColor);
+    }
 
-    ImTextureID textureID = Private::Backend->GetTextureNativeHandler(&texture);
-    ImGui::Image(textureID, ImVec2(size.x, size.y), uv0, uv1, toImColor(tintColor), toImColor(borderColor));
-}
+    bool ImageButton(const Nz::Texture* texture, const Nz::Vector2f& size, const int framePadding, const Nz::Color& bgColor, const Nz::Color& tintColor)
+    {
+        Nz::Vector2f textureSize(texture->GetSize().x * 1.f, texture->GetSize().y * 1.f);
+        return ::imageButtonImpl(texture, Nz::Rectf(0.f, 0.f, textureSize.x, textureSize.y), size, framePadding, bgColor, tintColor);
+    }
 
-/////////////// Image Button Overloads
+    /////////////// Draw_list Overloads
+    void DrawLine(const Nz::Vector2f& a, const Nz::Vector2f& b, const Nz::Color& color, float thickness)
+    {
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        ImVec2 pos = ImGui::GetCursorScreenPos();
+        draw_list->AddLine(ImVec2(a.x + pos.x, a.y + pos.y), ImVec2(b.x + pos.x, b.y + pos.y), ColorConvertFloat4ToU32(toImColor(color)), thickness);
+    }
 
-bool ImageButton(const Nz::Texture& texture, const int framePadding,
-                 const Nz::Color& bgColor, const Nz::Color& tintColor) {
-    return ImageButton(texture, Nz::Vector2f(texture.GetSize().x * 1.f, texture.GetSize().y * 1.f), framePadding, bgColor, tintColor);
-}
+    void DrawRect(const Nz::Rectf& rect, const Nz::Color& color, float rounding, int rounding_corners, float thickness)
+    {
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        draw_list->AddRect(getTopLeftAbsolute(rect), getDownRightAbsolute(rect), ColorConvertFloat4ToU32(toImColor(color)), rounding, rounding_corners, thickness);
+    }
 
-bool ImageButton(const Nz::Texture& texture, const Nz::Vector2f& size,
-                 const int framePadding, const Nz::Color& bgColor,
-                 const Nz::Color& tintColor) {
-    Nz::Vector2f textureSize(texture.GetSize().x * 1.f, texture.GetSize().y * 1.f);
-    return ::imageButtonImpl(texture, Nz::Rectf(0.f, 0.f, textureSize.x, textureSize.y), size, framePadding, bgColor, tintColor);
-}*/
-
-/////////////// Draw_list Overloads
-
-void DrawLine(const Nz::Vector2f& a, const Nz::Vector2f& b,
-              const Nz::Color& color, float thickness) {
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    ImVec2 pos = ImGui::GetCursorScreenPos();
-    draw_list->AddLine(ImVec2(a.x + pos.x, a.y + pos.y), ImVec2(b.x + pos.x, b.y + pos.y), ColorConvertFloat4ToU32(toImColor(color)), thickness);
-}
-
-void DrawRect(const Nz::Rectf& rect, const Nz::Color& color, float rounding,
-              int rounding_corners, float thickness) {
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    draw_list->AddRect(getTopLeftAbsolute(rect), getDownRightAbsolute(rect), ColorConvertFloat4ToU32(toImColor(color)), rounding, rounding_corners, thickness);
-}
-
-void DrawRectFilled(const Nz::Rectf& rect, const Nz::Color& color,
-                    float rounding, int rounding_corners) {
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    draw_list->AddRectFilled(getTopLeftAbsolute(rect), getDownRightAbsolute(rect), ColorConvertFloat4ToU32(toImColor(color)), rounding, rounding_corners);
-}
+    void DrawRectFilled(const Nz::Rectf& rect, const Nz::Color& color, float rounding, int rounding_corners)
+    {
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        draw_list->AddRectFilled(getTopLeftAbsolute(rect), getDownRightAbsolute(rect), ColorConvertFloat4ToU32(toImColor(color)), rounding, rounding_corners);
+    }
 
 }  // end of namespace ImGui
-
-namespace {
-ImColor toImColor(Nz::Color c ) {
-    return ImColor(static_cast<int>(c.r), static_cast<int>(c.g), static_cast<int>(c.b), static_cast<int>(c.a));
-}
-ImVec2 getTopLeftAbsolute(const Nz::Rectf& rect) {
-    ImVec2 pos = ImGui::GetCursorScreenPos();
-    return ImVec2(rect.GetCorner(Nz::RectCorner::LeftTop) + Nz::Vector2f(pos.x, pos.y));
-}
-ImVec2 getDownRightAbsolute(const Nz::Rectf& rect) {
-    ImVec2 pos = ImGui::GetCursorScreenPos();
-    return ImVec2(rect.GetCorner(Nz::RectCorner::RightBottom) + Nz::Vector2f(pos.x, pos.y));
-}
-
-/*bool imageButtonImpl(const Nz::Texture& texture,
-                     const Nz::Rectf& textureRect, const Nz::Vector2f& size,
-                     const int framePadding, const Nz::Color& bgColor,
-                     const Nz::Color& tintColor) {
-
-    Nz::Vector2f textureSize(texture.GetSize().x * 1.f, texture.GetSize().y * 1.f);
-    ImVec2 uv0(textureRect.GetCorner(Nz::RectCorner::LeftTop) / textureSize);
-    ImVec2 uv1(textureRect.GetCorner(Nz::RectCorner::RightBottom) / textureSize);
-
-    ImTextureID textureID = Private::Backend->GetTextureNativeHandler(&texture);
-    return ImGui::ImageButton(textureID, ImVec2(size.x,size.y), uv0, uv1, framePadding, toImColor(bgColor), toImColor(tintColor));
-}*/
-
-}  // end of anonymous namespace

@@ -65,7 +65,7 @@ namespace Nz
         struct
         {
             std::shared_ptr<Nz::RenderPipeline> Pipeline;
-            Nz::ShaderBindingPtr TextureShaderBinding;
+            std::unordered_map<Nz::Texture*, Nz::ShaderBindingPtr> TextureShaderBindings;
             std::shared_ptr<Nz::TextureSampler> TextureSampler;
         } m_texturedPipeline;
 
@@ -85,25 +85,14 @@ namespace ImGui
     // custom ImGui widgets for SFML stuff
 
     // Image overloads
-    /*void Image(const Nz::Texture& texture,
-        const Nz::Color& tintColor = Nz::Color::White,
-        const Nz::Color& borderColor = Nz::Color::Transparent);
-    void Image(const Nz::Texture& texture, const Nz::Vector2f& size,
-        const Nz::Color& tintColor = Nz::Color::White,
-        const Nz::Color& borderColor = Nz::Color::Transparent);
-    void Image(const Nz::Texture& texture, const Nz::Rectf& textureRect,
-        const Nz::Color& tintColor = Nz::Color::White,
-        const Nz::Color& borderColor = Nz::Color::Transparent);
-    void Image(const Nz::Texture& texture, const Nz::Vector2f& size, const Nz::Rectf& textureRect,
-        const Nz::Color& tintColor = Nz::Color::White,
-        const Nz::Color& borderColor = Nz::Color::Transparent);
+    void Image(const Nz::Texture* texture, const Nz::Color& tintColor = Nz::Color::White, const Nz::Color& borderColor = Nz::Color::Transparent);
+    void Image(const Nz::Texture* texture, const Nz::Vector2f& size, const Nz::Color& tintColor = Nz::Color::White, const Nz::Color& borderColor = Nz::Color::Transparent);
+    void Image(const Nz::Texture* texture, const Nz::Rectf& textureRect, const Nz::Color& tintColor = Nz::Color::White, const Nz::Color& borderColor = Nz::Color::Transparent);
+    void Image(const Nz::Texture* texture, const Nz::Vector2f& size, const Nz::Rectf& textureRect, const Nz::Color& tintColor = Nz::Color::White, const Nz::Color& borderColor = Nz::Color::Transparent);
 
     // ImageButton overloads
-    bool ImageButton(const Nz::Texture& texture, const int framePadding = -1,
-        const Nz::Color& bgColor = Nz::Color::Transparent,
-        const Nz::Color& tintColor = Nz::Color::White);
-    bool ImageButton(const Nz::Texture& texture, const Nz::Vector2f& size, const int framePadding = -1,
-        const Nz::Color& bgColor = Nz::Color::Transparent, const Nz::Color& tintColor = Nz::Color::White);*/
+    bool ImageButton(const Nz::Texture* texture, const int framePadding = -1, const Nz::Color& bgColor = Nz::Color::Transparent, const Nz::Color& tintColor = Nz::Color::White);
+    bool ImageButton(const Nz::Texture* texture, const Nz::Vector2f& size, const int framePadding = -1, const Nz::Color& bgColor = Nz::Color::Transparent, const Nz::Color& tintColor = Nz::Color::White);
 
     // Draw_list overloads. All positions are in relative coordinates (relative to top-left of the current window)
     void DrawLine(const Nz::Vector2f& a, const Nz::Vector2f& b, const Nz::Color& col, float thickness = 1.0f);
