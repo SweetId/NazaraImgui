@@ -98,6 +98,8 @@ namespace Nz
 
     Imgui::Imgui(Config config)
         : ModuleBase("Imgui", this)
+        , m_bMouseMoved(false)
+        , m_bWindowHasFocus(false)
     {
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
