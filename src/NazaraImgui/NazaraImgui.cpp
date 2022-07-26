@@ -1,4 +1,4 @@
-#include <NazaraImgui/NazaraImgui.h>
+#include <NazaraImgui/NazaraImgui.hpp>
 
 #include <Nazara/Core/DynLib.hpp>
 #include <Nazara/Core/Log.hpp>

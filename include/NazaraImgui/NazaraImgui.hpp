@@ -5,7 +5,7 @@
 #include <Nazara/Math/Rect.hpp>
 #include <Nazara/Utils/TypeList.hpp>
 
-#include "Config.h"
+#include <NazaraImgui/Config.hpp>
 
 #include <imgui/imgui.h>
 
