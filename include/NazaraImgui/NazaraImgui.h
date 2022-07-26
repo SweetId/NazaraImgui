@@ -64,16 +64,16 @@ namespace Nz
 
         struct
         {
-            std::shared_ptr<Nz::RenderPipeline> Pipeline;
-            std::unordered_map<Nz::Texture*, Nz::ShaderBindingPtr> TextureShaderBindings;
-            Nz::ShaderBindingPtr UboShaderBinding;
-            std::shared_ptr<Nz::TextureSampler> TextureSampler;
+            std::shared_ptr<Nz::RenderPipeline> pipeline;
+            std::unordered_map<Nz::Texture*, Nz::ShaderBindingPtr> textureShaderBindings;
+            Nz::ShaderBindingPtr uboShaderBinding;
+            std::shared_ptr<Nz::TextureSampler> textureSampler;
         } m_texturedPipeline;
 
         struct
         {
-            std::shared_ptr<Nz::RenderPipeline> Pipeline;
-            Nz::ShaderBindingPtr UboShaderBinding;
+            std::shared_ptr<Nz::RenderPipeline> pipeline;
+            Nz::ShaderBindingPtr uboShaderBinding;
         } m_untexturedPipeline;
 
         std::shared_ptr<Nz::RenderBuffer> m_uboBuffer;

@@ -106,13 +106,13 @@ namespace Nz
 
     Imgui::~Imgui()
     {
-        m_untexturedPipeline.UboShaderBinding.reset();
-        m_untexturedPipeline.Pipeline.reset();
+        m_untexturedPipeline.uboShaderBinding.reset();
+        m_untexturedPipeline.pipeline.reset();
 
-        m_texturedPipeline.UboShaderBinding.reset();
-        m_texturedPipeline.TextureShaderBindings.clear();
-        m_texturedPipeline.TextureSampler.reset();
-        m_texturedPipeline.Pipeline.reset();
+        m_texturedPipeline.uboShaderBinding.reset();
+        m_texturedPipeline.textureShaderBindings.clear();
+        m_texturedPipeline.textureSampler.reset();
+        m_texturedPipeline.pipeline.reset();
 
         ImGui::GetIO().Fonts->TexID = nullptr;
         ImGui::DestroyContext();
@@ -400,7 +400,7 @@ namespace Nz
         }
 
 
-        m_texturedPipeline.TextureSampler = renderDevice->InstantiateTextureSampler({});
+        m_texturedPipeline.textureSampler = renderDevice->InstantiateTextureSampler({});
 
         Nz::RenderPipelineLayoutInfo pipelineLayoutInfo;
 
@@ -437,12 +437,12 @@ namespace Nz
         pipelineVertexBuffer.binding = 0;
         pipelineVertexBuffer.declaration = Nz::VertexDeclaration::Get(Nz::VertexLayout::XYZ_Color_UV);
 
-        m_texturedPipeline.Pipeline = renderDevice->InstantiateRenderPipeline(pipelineInfo);
+        m_texturedPipeline.pipeline = renderDevice->InstantiateRenderPipeline(pipelineInfo);
 
         m_uboBuffer = renderDevice->InstantiateBuffer(Nz::BufferType::Uniform, sizeof(ImguiUbo), Nz::BufferUsage::DeviceLocal | Nz::BufferUsage::Dynamic);
 
-        m_texturedPipeline.UboShaderBinding = renderPipelineLayout->AllocateShaderBinding(0);
-        m_texturedPipeline.UboShaderBinding->Update({
+        m_texturedPipeline.uboShaderBinding = renderPipelineLayout->AllocateShaderBinding(0);
+        m_texturedPipeline.uboShaderBinding->Update({
             {
                 0,
                 Nz::ShaderBinding::UniformBufferBinding {
@@ -504,10 +504,10 @@ namespace Nz
         pipelineVertexBuffer.binding = 0;
         pipelineVertexBuffer.declaration = Nz::VertexDeclaration::Get(Nz::VertexLayout::XYZ_Color_UV);
 
-        m_untexturedPipeline.Pipeline = renderDevice->InstantiateRenderPipeline(pipelineInfo);
+        m_untexturedPipeline.pipeline = renderDevice->InstantiateRenderPipeline(pipelineInfo);
 
-        m_untexturedPipeline.UboShaderBinding = renderPipelineLayout->AllocateShaderBinding(0);
-        m_untexturedPipeline.UboShaderBinding->Update({
+        m_untexturedPipeline.uboShaderBinding = renderPipelineLayout->AllocateShaderBinding(0);
+        m_untexturedPipeline.uboShaderBinding->Update({
             {
                 0,
                 Nz::ShaderBinding::UniformBufferBinding {
@@ -598,28 +598,28 @@ namespace Nz
 
                                 if (nullptr != texture)
                                 {
-                                    if (std::end(m_texturedPipeline.TextureShaderBindings) == m_texturedPipeline.TextureShaderBindings.find(texture))
+                                    if (std::end(m_texturedPipeline.textureShaderBindings) == m_texturedPipeline.textureShaderBindings.find(texture))
                                     {
-                                        auto binding = m_texturedPipeline.Pipeline->GetPipelineInfo().pipelineLayout->AllocateShaderBinding(1);
+                                        auto binding = m_texturedPipeline.pipeline->GetPipelineInfo().pipelineLayout->AllocateShaderBinding(1);
                                         binding->Update({
                                             {
                                                 0,
                                                 Nz::ShaderBinding::TextureBinding {
-                                                    texture, m_texturedPipeline.TextureSampler.get()
+                                                    texture, m_texturedPipeline.textureSampler.get()
                                                 }
                                             }
                                         });
-                                        m_texturedPipeline.TextureShaderBindings[texture] = std::move(binding);
+                                        m_texturedPipeline.textureShaderBindings[texture] = std::move(binding);
                                     }
 
-                                    builder.BindPipeline(*m_texturedPipeline.Pipeline);
-                                    builder.BindShaderBinding(0, *m_texturedPipeline.UboShaderBinding);
-                                    builder.BindShaderBinding(1, *m_texturedPipeline.TextureShaderBindings[texture]);
+                                    builder.BindPipeline(*m_texturedPipeline.pipeline);
+                                    builder.BindShaderBinding(0, *m_texturedPipeline.uboShaderBinding);
+                                    builder.BindShaderBinding(1, *m_texturedPipeline.textureShaderBindings[texture]);
                                 }
                                 else
                                 {
-                                    builder.BindPipeline(*m_untexturedPipeline.Pipeline);
-                                    builder.BindShaderBinding(0, *m_untexturedPipeline.UboShaderBinding);
+                                    builder.BindPipeline(*m_untexturedPipeline.pipeline);
+                                    builder.BindShaderBinding(0, *m_untexturedPipeline.uboShaderBinding);
                                 }
 
                                 builder.SetViewport(Nz::Recti{ 0, 0, fb_width, fb_height });
