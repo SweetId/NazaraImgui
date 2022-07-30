@@ -53,9 +53,9 @@ target("NazaraImgui")
 	set_group("Libraries")
 	add_headerfiles("include/(NazaraImgui/**.hpp)")
 	add_headerfiles("include/(NazaraImgui/**.inl)")
-	add_headerfiles("src/NazaraImgui/**.h", { prefixdir = "private" })
-	add_headerfiles("src/NazaraImgui/**.hpp", { prefixdir = "private" })
-	add_headerfiles("src/NazaraImgui/**.inl", { prefixdir = "private" })
+	add_headerfiles("src/NazaraImgui/**.h", { prefixdir = "private", install = false })
+	add_headerfiles("src/NazaraImgui/**.hpp", { prefixdir = "private", install = false })
+	add_headerfiles("src/NazaraImgui/**.inl", { prefixdir = "private", install = false })
 	add_files("src/NazaraImgui/**.cpp")
 
 
