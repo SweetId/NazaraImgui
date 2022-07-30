@@ -21,8 +21,8 @@
 #include <map>
 
 #if __cplusplus >= 201103L  // C++11 and above
-static_assert(sizeof(GLuint) <= sizeof(ImTextureID),
-              "ImTextureID is not large enough to fit GLuint.");
+static_assert(sizeof(void*) <= sizeof(ImTextureID),
+              "ImTextureID is not large enough to fit void* ptr.");
 #endif
 
 #ifdef NAZARAIMGUI_COMPILER_MSVC
@@ -96,7 +96,7 @@ namespace Nz
 
     Imgui* Imgui::s_instance = nullptr;
 
-    Imgui::Imgui(Config config)
+    Imgui::Imgui(Config /*config*/)
         : ModuleBase("Imgui", this)
         , m_bMouseMoved(false)
         , m_bWindowHasFocus(false)
@@ -202,7 +202,7 @@ namespace Nz
         io.KeyMap[ImGuiKey_Z] = (int)Nz::Keyboard::Scancode::Z;
 
         // Setup event handler
-        handler.OnMouseMoved.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::MouseMoveEvent& event) {
+        handler.OnMouseMoved.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::MouseMoveEvent&) {
             if (!m_bWindowHasFocus)
                 return;
 
@@ -557,8 +557,6 @@ namespace Nz
 
         for (int n = 0; n < drawData->CmdListsCount; ++n) {
             const ImDrawList* cmd_list = drawData->CmdLists[n];
-            const unsigned char* vtx_buffer =
-                (const unsigned char*)&cmd_list->VtxBuffer.front();
             const ImDrawIdx* idx_buffer = &cmd_list->IdxBuffer.front();
 
             std::vector<Nz::VertexStruct_XYZ_Color_UV> vertices;
