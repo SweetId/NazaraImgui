@@ -61,4 +61,4 @@ target("NazaraImgui")
 	add_headerfiles("src/NazaraImgui/**.inl", { prefixdir = "private", install = false })
 	add_files("src/NazaraImgui/**.cpp")
 
-
+includes("examples/xmake.lua")
