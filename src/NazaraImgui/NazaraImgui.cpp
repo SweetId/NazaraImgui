@@ -568,40 +568,66 @@ namespace Nz
 
         auto renderDevice = Nz::Graphics::Instance()->GetRenderDevice();
 
+        struct DrawCall
+        {
+            size_t vertex_offset, indice_offset;
+            std::vector<ImDrawCmd> cmdBuffer;
+        };
+
+        std::vector<DrawCall> drawCalls;
+
+        // first pass over cmd lists to prepare buffers
+        std::vector<Nz::VertexStruct_XYZ_Color_UV> vertices;
+        std::vector<uint16_t> indices;
         for (int n = 0; n < drawData->CmdListsCount; ++n) {
             const ImDrawList* cmd_list = drawData->CmdLists[n];
-            const ImDrawIdx* idx_buffer = &cmd_list->IdxBuffer.front();
 
-            std::vector<Nz::VertexStruct_XYZ_Color_UV> vertices;
-            vertices.reserve(cmd_list->VtxBuffer.size());
+            DrawCall drawCall;
+            drawCall.vertex_offset = vertices.size();
+            drawCall.indice_offset = indices.size();
+
+            vertices.reserve(vertices.size() + cmd_list->VtxBuffer.size());
             for (auto& vertex : cmd_list->VtxBuffer)
                 vertices.push_back({ ToNzVec3(vertex.pos), ToNzColor(vertex.col), ToNzVec2(vertex.uv) });
 
-            size_t size = vertices.size() * sizeof(Nz::VertexStruct_XYZ_Color_UV);
-            auto vertexBuffer = renderDevice->InstantiateBuffer(Nz::BufferType::Vertex, size, Nz::BufferUsage::DeviceLocal | Nz::BufferUsage::Dynamic, vertices.data());
-            auto indexBuffer = renderDevice->InstantiateBuffer(Nz::BufferType::Index, cmd_list->IdxBuffer.size() * sizeof(ImWchar), Nz::BufferUsage::DeviceLocal | Nz::BufferUsage::Dynamic, idx_buffer);
+            indices.reserve(indices.size() + cmd_list->IdxBuffer.size());
+            for (auto indice : cmd_list->IdxBuffer)
+                indices.push_back(drawCall.vertex_offset + indice);
 
-            auto* windowRT = window.GetRenderTarget();
-
-            std::vector<ImDrawCmd> cmdBuffer;
-            cmdBuffer.reserve(cmd_list->CmdBuffer.size());
             for (auto& cmd : cmd_list->CmdBuffer)
-                cmdBuffer.push_back(cmd);
+                drawCall.cmdBuffer.push_back(cmd);
 
-            frame.Execute([this, windowRT, &frame, fb_width, fb_height, cmdBuffer, vertexBuffer, indexBuffer](Nz::CommandBufferBuilder& builder) {
-                builder.BeginDebugRegion("ImGui", Nz::Color::Green);
+            drawCalls.push_back(std::move(drawCall));
+        }
+
+
+        // now that we have macro buffers, allocate them on gpu
+        size_t size = vertices.size() * sizeof(Nz::VertexStruct_XYZ_Color_UV);
+        auto vertexBuffer = renderDevice->InstantiateBuffer(Nz::BufferType::Vertex, size, Nz::BufferUsage::DeviceLocal | Nz::BufferUsage::Dynamic, vertices.data());
+        size = indices.size() * sizeof(uint16_t);
+        auto indexBuffer = renderDevice->InstantiateBuffer(Nz::BufferType::Index, size, Nz::BufferUsage::DeviceLocal | Nz::BufferUsage::Dynamic, indices.data());
+
+        // freeing memory now, no need to keep buffers on CPU
+        vertices.clear();
+        indices.clear();
+
+        auto* windowRT = window.GetRenderTarget();
+
+        frame.Execute([this, windowRT, &frame, fb_width, fb_height, drawCalls, vertexBuffer, indexBuffer](Nz::CommandBufferBuilder& builder) {
+            builder.BeginDebugRegion("ImGui", Nz::Color::Green);
+            {
+                Nz::Recti renderRect(0, 0, fb_width, fb_height);
+
+                builder.BeginRenderPass(windowRT->GetFramebuffer(frame.GetFramebufferIndex()), windowRT->GetRenderPass(), renderRect);
                 {
-                    Nz::Recti renderRect(0, 0, fb_width, fb_height);
+                    builder.SetViewport(Nz::Recti{ 0, 0, fb_width, fb_height });
+                    builder.BindIndexBuffer(*indexBuffer, Nz::IndexType::U16);
+                    builder.BindVertexBuffer(0, *vertexBuffer);
 
-                    Nz::CommandBufferBuilder::ClearValues clearValues[2];
-                    clearValues[0].color = Nz::Color::Black;
-                    clearValues[1].depth = 1.f;
-                    clearValues[1].stencil = 0;
-
-                    builder.BeginRenderPass(windowRT->GetFramebuffer(frame.GetFramebufferIndex()), windowRT->GetRenderPass(), renderRect, { clearValues[0], clearValues[1] });
+                    for (auto& drawCall : drawCalls)
                     {
-                        Nz::UInt64 indexOffset = 0;
-                        for (auto& cmd : cmdBuffer)
+                        Nz::UInt64 indexOffset = drawCall.indice_offset;
+                        for (auto& cmd : drawCall.cmdBuffer)
                         {
                             if (!cmd.UserCallback)
                             {
@@ -635,22 +661,18 @@ namespace Nz
                                     builder.BindShaderBinding(0, *m_untexturedPipeline.uboShaderBinding);
                                 }
 
-                                builder.SetViewport(Nz::Recti{ 0, 0, fb_width, fb_height });
                                 builder.SetScissor(Nz::Recti{ int(rect.x), int(rect.y), int(rect.z - rect.x), int(rect.w - rect.y) });// Nz::Recti{ int(rect.x), int(fb_height - rect.w), int(rect.z - rect.x), int(rect.w - rect.y) });
 
-                                builder.BindIndexBuffer(*indexBuffer, Nz::IndexType::U16, indexOffset * sizeof(ImWchar));
-                                builder.BindVertexBuffer(0, *vertexBuffer);
-
-                                builder.DrawIndexed(count);
+                                builder.DrawIndexed(count, 1, indexOffset);
                             }
                             indexOffset += cmd.ElemCount;
                         }
                     }
-                    builder.EndRenderPass();
                 }
-                builder.EndDebugRegion();
-                }, Nz::QueueType::Graphics);
-        }
+                builder.EndRenderPass();
+            }
+            builder.EndDebugRegion();
+        }, Nz::QueueType::Graphics);
     }
 }
 
