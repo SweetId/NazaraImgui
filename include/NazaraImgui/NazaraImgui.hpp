@@ -8,6 +8,7 @@
 #include <NazaraImgui/Config.hpp>
 
 #include <imgui.h>
+#include <unordered_set>
 
 namespace Nz
 {
@@ -18,6 +19,12 @@ namespace Nz
     class RenderWindow;
     class Texture;
     class Window;
+
+    struct ImguiHandler
+    {
+    public:
+        virtual void OnRenderImgui() = 0;
+    };
 
     class Imgui : public Nz::ModuleBase<Imgui>
     {
@@ -33,6 +40,10 @@ namespace Nz
         bool Init(Nz::Window& window, bool bLoadDefaultFont = true);
         void Update(Nz::Window& window, float dt);
         void Render(Nz::RenderWindow& window, Nz::RenderFrame& frame);
+
+        // User-defined
+        void AddHandler(ImguiHandler* handler);
+        void RemoveHandler(ImguiHandler* handler);
 
         // Clipboard functions
         static void SetClipboardText(void* userData, const char* text);
@@ -78,6 +89,8 @@ namespace Nz
 
         std::shared_ptr<Nz::RenderBuffer> m_uboBuffer;
         std::shared_ptr<Nz::Texture> m_fontTexture;
+
+        std::unordered_set<ImguiHandler*> m_handlers;
 
         static Imgui* s_instance;
     };

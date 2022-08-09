@@ -312,8 +312,21 @@ namespace Nz
 
     void Imgui::Render(Nz::RenderWindow& window, Nz::RenderFrame& frame)
     {
+        for (auto* handler : m_handlers)
+            handler->OnRenderImgui();
+
         ImGui::Render();
         RenderDrawLists(window, frame, ImGui::GetDrawData());
+    }
+
+    void Imgui::AddHandler(ImguiHandler* handler)
+    {
+        m_handlers.insert(handler);
+    }
+
+    void Imgui::RemoveHandler(ImguiHandler* handler)
+    {
+        m_handlers.erase(handler);
     }
 
     void Imgui::SetClipboardText(void* userData, const char* text)
