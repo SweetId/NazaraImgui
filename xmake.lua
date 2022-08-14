@@ -37,7 +37,7 @@ elseif is_plat("mingw") then
 end
 
 if is_mode("debug") then
-	set_runtimes("MTd")
+	set_runtimes("MDd")
 elseif is_mode("asan", "tsan", "ubsan") then
 	set_optimize("none") -- by default xmake will optimize asan builds
 elseif is_mode("coverage") then
@@ -45,7 +45,7 @@ elseif is_mode("coverage") then
 		add_links("gcov")
 	end
 elseif is_mode("releasedbg") then
-	set_runtimes("MT")
+	set_runtimes("MD")
 	set_fpmodels("fast")
 	add_vectorexts("sse", "sse2", "sse3", "ssse3")
 end
