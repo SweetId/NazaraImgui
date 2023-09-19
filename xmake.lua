@@ -7,7 +7,7 @@ includes("xmake/**.lua")
 
 add_repositories("nazara-engine-repo https://github.com/NazaraEngine/xmake-repo")
 add_requires("nazarautils", "nzsl")
-add_requires("nazaraengine", { alias = "nazara" })
+add_requires("nazaraengine", { alias = "nazara", debug = is_mode("debug") })
 add_requires("imgui v1.87-docking", { alias = "imgui" })
 
 add_includedirs("include", "src")
