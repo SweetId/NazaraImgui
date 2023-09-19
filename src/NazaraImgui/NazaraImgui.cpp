@@ -4,12 +4,11 @@
 #include <Nazara/Core/Log.hpp>
 #include <Nazara/Platform/Cursor.hpp>
 #include <Nazara/Platform/Clipboard.hpp>
-#include <Nazara/Platform/Event.hpp>
 #include <Nazara/Platform/Window.hpp>
 #include <Nazara/Renderer/CommandBufferBuilder.hpp>
 #include <Nazara/Renderer/Renderer.hpp>
 #include <Nazara/Renderer/RenderTarget.hpp>
-#include <Nazara/Renderer/RenderWindow.hpp>
+#include <Nazara/Renderer/RenderTarget.hpp>
 #include <Nazara/Renderer/Texture.hpp>
 #include <NZSL/Parser.hpp>
 
@@ -174,7 +173,7 @@ namespace Nz
 #endif
     }
 
-    void Imgui::SetupInputs(Nz::EventHandler& handler)
+    void Imgui::SetupInputs(Nz::WindowEventHandler& handler)
     {
         ImGuiIO& io = ImGui::GetIO();
 
@@ -202,14 +201,14 @@ namespace Nz
         io.KeyMap[ImGuiKey_Z] = (int)Nz::Keyboard::Scancode::Z;
 
         // Setup event handler
-        handler.OnMouseMoved.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::MouseMoveEvent&) {
+        handler.OnMouseMoved.Connect([this](const Nz::WindowEventHandler*, const Nz::WindowEvent::MouseMoveEvent&) {
             if (!m_bWindowHasFocus)
                 return;
 
             m_bMouseMoved = true;
         });
 
-        handler.OnMouseButtonPressed.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::MouseButtonEvent& event) {
+        handler.OnMouseButtonPressed.Connect([this](const Nz::WindowEventHandler*, const Nz::WindowEvent::MouseButtonEvent& event) {
             if (!m_bWindowHasFocus)
                 return;
 
@@ -221,7 +220,7 @@ namespace Nz
             }
         });
 
-        handler.OnMouseButtonReleased.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::MouseButtonEvent& event) {
+        handler.OnMouseButtonReleased.Connect([this](const Nz::WindowEventHandler*, const Nz::WindowEvent::MouseButtonEvent& event) {
             if (!m_bWindowHasFocus)
                 return;
 
@@ -233,7 +232,7 @@ namespace Nz
             }
         });
 
-        handler.OnMouseWheelMoved.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::MouseWheelEvent& event) {
+        handler.OnMouseWheelMoved.Connect([this](const Nz::WindowEventHandler*, const Nz::WindowEvent::MouseWheelEvent& event) {
             if (!m_bWindowHasFocus)
                 return;
 
@@ -241,7 +240,7 @@ namespace Nz
             io.MouseWheel += event.delta;
         });
 
-        handler.OnKeyPressed.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::KeyEvent& event) {
+        handler.OnKeyPressed.Connect([this](const Nz::WindowEventHandler*, const Nz::WindowEvent::KeyEvent& event) {
             if (!m_bWindowHasFocus)
                 return;
 
@@ -249,7 +248,7 @@ namespace Nz
             io.KeysDown[(int)event.scancode] = true;
         });
 
-        handler.OnKeyReleased.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::KeyEvent& event) {
+        handler.OnKeyReleased.Connect([this](const Nz::WindowEventHandler*, const Nz::WindowEvent::KeyEvent& event) {
             if (!m_bWindowHasFocus)
                 return;
 
@@ -257,7 +256,7 @@ namespace Nz
             io.KeysDown[(int)event.scancode] = false;
         });
 
-        handler.OnTextEntered.Connect([this](const Nz::EventHandler*, const Nz::WindowEvent::TextEvent& event) {
+        handler.OnTextEntered.Connect([this](const Nz::WindowEventHandler*, const Nz::WindowEvent::TextEvent& event) {
             if (!m_bWindowHasFocus)
                 return;
 
@@ -271,11 +270,11 @@ namespace Nz
             io.AddInputCharacter(event.character);
         });
 
-        handler.OnGainedFocus.Connect([this](const Nz::EventHandler*) {
+        handler.OnGainedFocus.Connect([this](const Nz::WindowEventHandler*) {
             m_bWindowHasFocus = true;
         });
 
-        handler.OnLostFocus.Connect([this](const Nz::EventHandler*) {
+        handler.OnLostFocus.Connect([this](const Nz::WindowEventHandler*) {
             m_bWindowHasFocus = false;
         });
     }
@@ -310,13 +309,13 @@ namespace Nz
         ImGui::NewFrame();
     }
 
-    void Imgui::Render(Nz::RenderWindow& window, Nz::RenderFrame& frame)
+    void Imgui::Render(Nz::RenderTarget* renderTarget, Nz::RenderFrame& frame)
     {
         for (auto* handler : m_handlers)
             handler->OnRenderImgui();
 
         ImGui::Render();
-        RenderDrawLists(window, frame, ImGui::GetDrawData());
+        RenderDrawLists(renderTarget, frame, ImGui::GetDrawData());
     }
 
     void Imgui::AddHandler(ImguiHandler* handler)
@@ -438,7 +437,7 @@ namespace Nz
         pipelineInfo.shaderModules.emplace_back(shader);
 
         pipelineInfo.depthBuffer = false;
-        pipelineInfo.faceCulling = false;
+        pipelineInfo.faceCulling = Nz::FaceCulling::None;
         pipelineInfo.scissorTest = true;
 
         pipelineInfo.blending = true;
@@ -505,7 +504,7 @@ namespace Nz
         pipelineInfo.shaderModules.emplace_back(shader);
 
         pipelineInfo.depthBuffer = false;
-        pipelineInfo.faceCulling = false;
+        pipelineInfo.faceCulling = Nz::FaceCulling::None;
         pipelineInfo.scissorTest = true;
 
         pipelineInfo.blending = true;
@@ -534,7 +533,7 @@ namespace Nz
     }
 
     // Rendering callback
-    void Imgui::RenderDrawLists(Nz::RenderWindow& window, Nz::RenderFrame& frame, ImDrawData* drawData)
+    void Imgui::RenderDrawLists(Nz::RenderTarget* renderTarget, Nz::RenderFrame& frame, ImDrawData* drawData)
     {
         if (drawData->CmdListsCount == 0)
             return;
@@ -555,7 +554,7 @@ namespace Nz
 
         frame.Execute([&](Nz::CommandBufferBuilder& builder)
             {
-                builder.BeginDebugRegion("UBO Update", Nz::Color::Yellow);
+                builder.BeginDebugRegion("UBO Update", Nz::Color::Yellow());
                 {
                     builder.PreTransferBarrier();
                     builder.CopyBuffer(allocation, m_uboBuffer.get());
@@ -611,14 +610,12 @@ namespace Nz
         vertices.clear();
         indices.clear();
 
-        auto* windowRT = window.GetRenderTarget();
-
-        frame.Execute([this, windowRT, &frame, fb_width, fb_height, drawCalls, vertexBuffer, indexBuffer](Nz::CommandBufferBuilder& builder) {
-            builder.BeginDebugRegion("ImGui", Nz::Color::Green);
+        frame.Execute([this, renderTarget, &frame, fb_width, fb_height, drawCalls, vertexBuffer, indexBuffer](Nz::CommandBufferBuilder& builder) {
+            builder.BeginDebugRegion("ImGui", Nz::Color::Green());
             {
                 Nz::Recti renderRect(0, 0, fb_width, fb_height);
 
-                builder.BeginRenderPass(windowRT->GetFramebuffer(frame.GetFramebufferIndex()), windowRT->GetRenderPass(), renderRect);
+                builder.BeginRenderPass(renderTarget->GetFramebuffer(frame.GetFramebufferIndex()), renderTarget->GetRenderPass(), renderRect);
                 {
                     builder.SetViewport(Nz::Recti{ 0, 0, fb_width, fb_height });
                     builder.BindIndexBuffer(*indexBuffer, Nz::IndexType::U16);
@@ -643,7 +640,7 @@ namespace Nz
                                         binding->Update({
                                             {
                                                 0,
-                                                Nz::ShaderBinding::TextureBinding {
+                                                Nz::ShaderBinding::SampledTextureBinding {
                                                     texture, m_texturedPipeline.textureSampler.get()
                                                 }
                                             }
@@ -651,14 +648,14 @@ namespace Nz
                                         m_texturedPipeline.textureShaderBindings[texture] = std::move(binding);
                                     }
 
-                                    builder.BindPipeline(*m_texturedPipeline.pipeline);
-                                    builder.BindShaderBinding(0, *m_texturedPipeline.uboShaderBinding);
-                                    builder.BindShaderBinding(1, *m_texturedPipeline.textureShaderBindings[texture]);
+                                    builder.BindRenderPipeline(*m_texturedPipeline.pipeline);
+                                    builder.BindRenderShaderBinding(0, *m_texturedPipeline.uboShaderBinding);
+                                    builder.BindRenderShaderBinding(1, *m_texturedPipeline.textureShaderBindings[texture]);
                                 }
                                 else
                                 {
-                                    builder.BindPipeline(*m_untexturedPipeline.pipeline);
-                                    builder.BindShaderBinding(0, *m_untexturedPipeline.uboShaderBinding);
+                                    builder.BindRenderPipeline(*m_untexturedPipeline.pipeline);
+                                    builder.BindRenderShaderBinding(0, *m_untexturedPipeline.uboShaderBinding);
                                 }
 
                                 builder.SetScissor(Nz::Recti{ int(rect.x), int(rect.y), int(rect.z - rect.x), int(rect.w - rect.y) });// Nz::Recti{ int(rect.x), int(fb_height - rect.w), int(rect.z - rect.x), int(rect.w - rect.y) });

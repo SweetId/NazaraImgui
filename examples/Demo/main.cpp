@@ -1,9 +1,15 @@
 
-#include <Nazara/Core/Modules.hpp>
+#include <Nazara/Core/Application.hpp>
+#include <Nazara/Core/Clock.hpp>
 #include <Nazara/Graphics/Graphics.hpp>
-#include <Nazara/Renderer/RenderWindow.hpp>
+#include <Nazara/Platform/AppWindowingComponent.hpp>
+#include <Nazara/Platform/Platform.hpp>
+#include <Nazara/Renderer/GpuSwitch.hpp>
+#include <Nazara/Renderer/WindowSwapchain.hpp>
 
 #include <NazaraImgui/NazaraImgui.hpp>
+
+NAZARA_REQUEST_DEDICATED_GPU()
 
 struct MyImguiWindow
 	: private Nz::ImguiHandler
@@ -28,23 +34,28 @@ struct MyImguiWindow
 	float values[4] = { 0 };
 };
 
+#if 1
+int main(int argc, char* argv[])
+#else
 int WinMain(int argc, char* argv[])
+#endif
 {
 	NazaraUnused(argc);
 	NazaraUnused(argv);
 
-	Nz::Modules<Nz::Graphics, Nz::Imgui> nazara;
+	Nz::Application<Nz::Graphics, Nz::Imgui> nazara;
+	auto& windowing = nazara.AddComponent<Nz::AppWindowingComponent>();
+	std::shared_ptr<Nz::RenderDevice> device = Nz::Graphics::Instance()->GetRenderDevice();
+
+	std::string windowTitle = "Nazara Imgui Demo";
+	Nz::Window& window = windowing.CreateWindow(Nz::VideoMode(1280, 720, 32), windowTitle);
+	Nz::WindowSwapchain windowSwapchain(device, window);
 
 	// Load test texture
 	Nz::TextureParams texParams;
 	texParams.renderDevice = Nz::Graphics::Instance()->GetRenderDevice();
 	texParams.loadFormat = Nz::PixelFormat::RGBA8;
 	auto logo = Nz::Texture::LoadFromFile("LogoMini.png", texParams);
-
-	std::string windowTitle = "Nazara Imgui Demo";
-	Nz::RenderWindow window;
-	if (!window.Create(Nz::Graphics::Instance()->GetRenderDevice(), Nz::VideoMode(1280, 720, 32), windowTitle))
-		return false;
 
 	// connect basic handler
 	window.GetEventHandler().OnQuit.Connect([&window](const auto* handler) {
@@ -58,20 +69,20 @@ int WinMain(int argc, char* argv[])
 	float val = 0.f;
 	float color[4] = { 1,0,0,1 };
 
-	Nz::Clock updateClock;
+	Nz::MillisecondClock updateClock;
 
 	while (window.IsOpen())
 	{
 		window.ProcessEvents();
 
-		Nz::RenderFrame frame = window.AcquireFrame();
+		Nz::RenderFrame frame = windowSwapchain.AcquireFrame();
 		if (!frame)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 			continue;
 		}
 
-		float deltaTime = updateClock.GetSeconds();
+		float deltaTime = updateClock.GetElapsedTime().AsSeconds();
 		Nz::Imgui::Instance()->Update(window, deltaTime);
 
 		ImGui::Begin("Loop Window");
@@ -83,7 +94,7 @@ int WinMain(int argc, char* argv[])
 		ImGui::InputFloat4("value from 2nd window", mywindow.values, "%.3f", ImGuiInputTextFlags_ReadOnly);
 		ImGui::End();
 
-		Nz::Imgui::Instance()->Render(window, frame);
+		Nz::Imgui::Instance()->Render(&windowSwapchain, frame);
 
 		frame.Present();
 

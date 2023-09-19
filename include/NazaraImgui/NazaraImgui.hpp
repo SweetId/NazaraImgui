@@ -3,8 +3,6 @@
 #include <Nazara/Core/ModuleBase.hpp>
 #include <Nazara/Graphics/Graphics.hpp>
 #include <Nazara/Math/Rect.hpp>
-#include <Nazara/Utils/TypeList.hpp>
-
 #include <NazaraImgui/Config.hpp>
 
 #include <imgui.h>
@@ -13,12 +11,12 @@
 namespace Nz
 {
     class Cursor;
-    class EventHandler;
     class RenderFrame;
     class RenderTarget;
     class RenderWindow;
     class Texture;
     class Window;
+    class WindowEventHandler;
 
     struct ImguiHandler
     {
@@ -39,7 +37,7 @@ namespace Nz
 
         bool Init(Nz::Window& window, bool bLoadDefaultFont = true);
         void Update(Nz::Window& window, float dt);
-        void Render(Nz::RenderWindow& window, Nz::RenderFrame& frame);
+        void Render(Nz::RenderTarget* renderTarget, Nz::RenderFrame& frame);
 
         // User-defined
         void AddHandler(ImguiHandler* handler);
@@ -55,7 +53,7 @@ namespace Nz
         };
 
     private:
-        void SetupInputs(Nz::EventHandler& handler);
+        void SetupInputs(Nz::WindowEventHandler& handler);
         void Update(const Nz::Vector2i& mousePosition, const Nz::Vector2ui& displaySize, float dt);
 
         // Cursor functions
@@ -66,7 +64,7 @@ namespace Nz
         bool LoadUntexturedPipeline();
         void UpdateFontTexture();
 
-        void RenderDrawLists(Nz::RenderWindow& window, Nz::RenderFrame& frame, ImDrawData* drawData);
+        void RenderDrawLists(Nz::RenderTarget* renderTarget, Nz::RenderFrame& frame, ImDrawData* drawData);
 
         std::string m_clipboardText;
 
@@ -101,14 +99,14 @@ namespace ImGui
     // custom ImGui widgets for SFML stuff
 
     // Image overloads
-    void Image(const Nz::Texture* texture, const Nz::Color& tintColor = Nz::Color::White, const Nz::Color& borderColor = Nz::Color(0,0,0,0));
-    void Image(const Nz::Texture* texture, const Nz::Vector2f& size, const Nz::Color& tintColor = Nz::Color::White, const Nz::Color& borderColor = Nz::Color(0,0,0,0));
-    void Image(const Nz::Texture* texture, const Nz::Rectf& textureRect, const Nz::Color& tintColor = Nz::Color::White, const Nz::Color& borderColor = Nz::Color(0,0,0,0));
-    void Image(const Nz::Texture* texture, const Nz::Vector2f& size, const Nz::Rectf& textureRect, const Nz::Color& tintColor = Nz::Color::White, const Nz::Color& borderColor = Nz::Color(0,0,0,0));
+    void Image(const Nz::Texture* texture, const Nz::Color& tintColor = Nz::Color::White(), const Nz::Color& borderColor = Nz::Color(0, 0, 0, 0));
+    void Image(const Nz::Texture* texture, const Nz::Vector2f& size, const Nz::Color& tintColor = Nz::Color::White(), const Nz::Color& borderColor = Nz::Color(0, 0, 0, 0));
+    void Image(const Nz::Texture* texture, const Nz::Rectf& textureRect, const Nz::Color& tintColor = Nz::Color::White(), const Nz::Color& borderColor = Nz::Color(0, 0, 0, 0));
+    void Image(const Nz::Texture* texture, const Nz::Vector2f& size, const Nz::Rectf& textureRect, const Nz::Color& tintColor = Nz::Color::White(), const Nz::Color& borderColor = Nz::Color(0, 0, 0, 0));
 
     // ImageButton overloads
-    bool ImageButton(const Nz::Texture* texture, const int framePadding = -1, const Nz::Color& bgColor = Nz::Color(0,0,0,0), const Nz::Color& tintColor = Nz::Color::White);
-    bool ImageButton(const Nz::Texture* texture, const Nz::Vector2f& size, const int framePadding = -1, const Nz::Color& bgColor = Nz::Color(0,0,0,0), const Nz::Color& tintColor = Nz::Color::White);
+    bool ImageButton(const Nz::Texture* texture, const int framePadding = -1, const Nz::Color& bgColor = Nz::Color(0,0,0,0), const Nz::Color& tintColor = Nz::Color::White());
+    bool ImageButton(const Nz::Texture* texture, const Nz::Vector2f& size, const int framePadding = -1, const Nz::Color& bgColor = Nz::Color(0,0,0,0), const Nz::Color& tintColor = Nz::Color::White());
 
     // Draw_list overloads. All positions are in relative coordinates (relative to top-left of the current window)
     void DrawLine(const Nz::Vector2f& a, const Nz::Vector2f& b, const Nz::Color& col, float thickness = 1.0f);
