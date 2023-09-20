@@ -128,8 +128,12 @@ namespace Nz
         ImGuiIO& io = ImGui::GetIO();
 
         // tell ImGui which features we support
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
         io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
         io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
+        io.BackendFlags |= ImGuiBackendFlags_HasMouseHoveredViewport;
         io.BackendPlatformName = "imgui_nazara";
 
         // init rendering
