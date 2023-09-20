@@ -99,6 +99,7 @@ namespace Nz
         : ModuleBase("Imgui", this)
         , m_bMouseMoved(false)
         , m_bWindowHasFocus(false)
+        , m_currentContext(nullptr)
     {
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
@@ -123,7 +124,7 @@ namespace Nz
 
     bool Imgui::Init(Nz::Window& window, bool bLoadDefaultFont)
     {
-        ImGui::CreateContext();
+        m_currentContext = ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
 
         // tell ImGui which features we support
@@ -341,6 +342,16 @@ namespace Nz
         Imgui* backend = static_cast<Imgui*>(userData);
         backend->m_clipboardText = Nz::Clipboard::GetString();
         return backend->m_clipboardText.c_str();
+    }
+
+    ImGuiContext* Imgui::GetCurrentContext()
+    {
+        return ImGui::GetCurrentContext();
+    }
+
+    void Imgui::GetAllocatorFunctions(ImGuiMemAllocFunc* allocFunc, ImGuiMemFreeFunc* freeFunc, void** userData)
+    {
+        ImGui::GetAllocatorFunctions(allocFunc, freeFunc, userData);
     }
 
     void Imgui::UpdateFontTexture()

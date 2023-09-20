@@ -52,6 +52,9 @@ namespace Nz
             Nz::Vector2f framebufferSize;
         };
 
+        static ImGuiContext* GetCurrentContext();
+        static void GetAllocatorFunctions(ImGuiMemAllocFunc* allocFunc, ImGuiMemFreeFunc* freeFunc, void** userData);
+
     private:
         void SetupInputs(Nz::WindowEventHandler& handler);
         void Update(const Nz::Vector2i& mousePosition, const Nz::Vector2ui& displaySize, float dt);
@@ -66,6 +69,7 @@ namespace Nz
 
         void RenderDrawLists(Nz::RenderTarget* renderTarget, Nz::RenderFrame& frame, ImDrawData* drawData);
 
+        ImGuiContext* m_currentContext;
         std::string m_clipboardText;
 
         bool m_bWindowHasFocus;
@@ -112,4 +116,16 @@ namespace ImGui
     NAZARA_IMGUI_API void DrawLine(const Nz::Vector2f& a, const Nz::Vector2f& b, const Nz::Color& col, float thickness = 1.0f);
     NAZARA_IMGUI_API void DrawRect(const Nz::Rectf& rect, const Nz::Color& color, float rounding = 0.0f, int rounding_corners = 0x0F, float thickness = 1.0f);
     NAZARA_IMGUI_API void DrawRectFilled(const Nz::Rectf& rect, const Nz::Color& color, float rounding = 0.0f, int rounding_corners = 0x0F);
+
+    void EnsureContextOnThisThread()
+    {
+        auto* context = Nz::Imgui::GetCurrentContext();
+        SetCurrentContext(context);
+
+        ImGuiMemAllocFunc allocFunc = nullptr;
+        ImGuiMemFreeFunc freeFunc = nullptr;
+        void* userData = nullptr;
+        Nz::Imgui::GetAllocatorFunctions(&allocFunc, &freeFunc, &userData);
+        SetAllocatorFunctions(allocFunc, freeFunc, userData);
+    }
 }
