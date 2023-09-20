@@ -606,7 +606,7 @@ namespace Nz
 
             indices.reserve(indices.size() + cmd_list->IdxBuffer.size());
             for (auto indice : cmd_list->IdxBuffer)
-                indices.push_back(drawCall.vertex_offset + indice);
+                indices.push_back(uint16_t(drawCall.vertex_offset + indice));
 
             for (auto& cmd : cmd_list->CmdBuffer)
                 drawCall.cmdBuffer.push_back(cmd);
@@ -675,7 +675,7 @@ namespace Nz
 
                                 builder.SetScissor(Nz::Recti{ int(rect.x), int(rect.y), int(rect.z - rect.x), int(rect.w - rect.y) });// Nz::Recti{ int(rect.x), int(fb_height - rect.w), int(rect.z - rect.x), int(rect.w - rect.y) });
 
-                                builder.DrawIndexed(count, 1, indexOffset);
+                                builder.DrawIndexed(count, 1, Nz::UInt32(indexOffset));
                             }
                             indexOffset += cmd.ElemCount;
                         }
