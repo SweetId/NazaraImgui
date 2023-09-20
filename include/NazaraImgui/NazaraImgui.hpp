@@ -117,7 +117,7 @@ namespace ImGui
     NAZARA_IMGUI_API void DrawRect(const Nz::Rectf& rect, const Nz::Color& color, float rounding = 0.0f, int rounding_corners = 0x0F, float thickness = 1.0f);
     NAZARA_IMGUI_API void DrawRectFilled(const Nz::Rectf& rect, const Nz::Color& color, float rounding = 0.0f, int rounding_corners = 0x0F);
 
-    void EnsureContextOnThisThread()
+    inline void EnsureContextOnThisThread()
     {
         auto* context = Nz::Imgui::GetCurrentContext();
         SetCurrentContext(context);
