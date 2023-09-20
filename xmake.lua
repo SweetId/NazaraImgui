@@ -61,4 +61,17 @@ target("NazaraImgui")
 	add_headerfiles("src/NazaraImgui/**.inl", { prefixdir = "private", install = false })
 	add_files("src/NazaraImgui/**.cpp")
 
+	-- for now only shared compilation is supported (except on platforms like wasm)
+	if not is_plat("wasm") then
+		set_kind("shared")
+	else
+		set_kind("static")
+		add_defines("NAZARA_IMGUI_STATIC", { public = true })
+	end
+	
+	add_defines("NAZARA_IMGUI_BUILD")
+	if is_mode("debug") then
+		add_defines("NAZARA_IMGUI_DEBUG")
+	end
+
 includes("examples/xmake.lua")

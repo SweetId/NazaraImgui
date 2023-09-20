@@ -23,13 +23,12 @@
         return Nz::Color(x, y , z, w);                                  \
     }
 
-#if defined(NAZARA_STATIC)
+#if defined(NAZARA_IMGUI_STATIC)
 	#define NAZARA_IMGUI_API
 #else
-    #define NAZARA_IMGUI_API
 	#ifdef NAZARA_IMGUI_BUILD
-	    //#define NAZARA_IMGUI_API NAZARA_EXPORT
+	    #define NAZARA_IMGUI_API NAZARA_EXPORT
 	#else
-        //#define NAZARA_IMGUI_API NAZARA_IMPORT
+        #define NAZARA_IMGUI_API NAZARA_IMPORT
 	#endif
 #endif

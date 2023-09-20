@@ -24,7 +24,7 @@ namespace Nz
         virtual void OnRenderImgui() = 0;
     };
 
-    class Imgui : public Nz::ModuleBase<Imgui>
+    class NAZARA_IMGUI_API Imgui : public Nz::ModuleBase<Imgui>
     {
         friend ModuleBase;
 
@@ -96,20 +96,20 @@ namespace Nz
 
 namespace ImGui
 {
-    // custom ImGui widgets for SFML stuff
+    // custom ImGui widgets for Nazara
 
     // Image overloads
-    void Image(const Nz::Texture* texture, const Nz::Color& tintColor = Nz::Color::White(), const Nz::Color& borderColor = Nz::Color(0, 0, 0, 0));
-    void Image(const Nz::Texture* texture, const Nz::Vector2f& size, const Nz::Color& tintColor = Nz::Color::White(), const Nz::Color& borderColor = Nz::Color(0, 0, 0, 0));
-    void Image(const Nz::Texture* texture, const Nz::Rectf& textureRect, const Nz::Color& tintColor = Nz::Color::White(), const Nz::Color& borderColor = Nz::Color(0, 0, 0, 0));
-    void Image(const Nz::Texture* texture, const Nz::Vector2f& size, const Nz::Rectf& textureRect, const Nz::Color& tintColor = Nz::Color::White(), const Nz::Color& borderColor = Nz::Color(0, 0, 0, 0));
+    NAZARA_IMGUI_API void Image(const Nz::Texture* texture, const Nz::Color& tintColor = Nz::Color::White(), const Nz::Color& borderColor = Nz::Color(0, 0, 0, 0));
+    NAZARA_IMGUI_API void Image(const Nz::Texture* texture, const Nz::Vector2f& size, const Nz::Color& tintColor = Nz::Color::White(), const Nz::Color& borderColor = Nz::Color(0, 0, 0, 0));
+    NAZARA_IMGUI_API void Image(const Nz::Texture* texture, const Nz::Rectf& textureRect, const Nz::Color& tintColor = Nz::Color::White(), const Nz::Color& borderColor = Nz::Color(0, 0, 0, 0));
+    NAZARA_IMGUI_API void Image(const Nz::Texture* texture, const Nz::Vector2f& size, const Nz::Rectf& textureRect, const Nz::Color& tintColor = Nz::Color::White(), const Nz::Color& borderColor = Nz::Color(0, 0, 0, 0));
 
     // ImageButton overloads
-    bool ImageButton(const Nz::Texture* texture, const int framePadding = -1, const Nz::Color& bgColor = Nz::Color(0,0,0,0), const Nz::Color& tintColor = Nz::Color::White());
-    bool ImageButton(const Nz::Texture* texture, const Nz::Vector2f& size, const int framePadding = -1, const Nz::Color& bgColor = Nz::Color(0,0,0,0), const Nz::Color& tintColor = Nz::Color::White());
+    NAZARA_IMGUI_API bool ImageButton(const Nz::Texture* texture, const int framePadding = -1, const Nz::Color& bgColor = Nz::Color(0,0,0,0), const Nz::Color& tintColor = Nz::Color::White());
+    NAZARA_IMGUI_API bool ImageButton(const Nz::Texture* texture, const Nz::Vector2f& size, const int framePadding = -1, const Nz::Color& bgColor = Nz::Color(0,0,0,0), const Nz::Color& tintColor = Nz::Color::White());
 
     // Draw_list overloads. All positions are in relative coordinates (relative to top-left of the current window)
-    void DrawLine(const Nz::Vector2f& a, const Nz::Vector2f& b, const Nz::Color& col, float thickness = 1.0f);
-    void DrawRect(const Nz::Rectf& rect, const Nz::Color& color, float rounding = 0.0f, int rounding_corners = 0x0F, float thickness = 1.0f);
-    void DrawRectFilled(const Nz::Rectf& rect, const Nz::Color& color, float rounding = 0.0f, int rounding_corners = 0x0F);
+    NAZARA_IMGUI_API void DrawLine(const Nz::Vector2f& a, const Nz::Vector2f& b, const Nz::Color& col, float thickness = 1.0f);
+    NAZARA_IMGUI_API void DrawRect(const Nz::Rectf& rect, const Nz::Color& color, float rounding = 0.0f, int rounding_corners = 0x0F, float thickness = 1.0f);
+    NAZARA_IMGUI_API void DrawRectFilled(const Nz::Rectf& rect, const Nz::Color& color, float rounding = 0.0f, int rounding_corners = 0x0F);
 }
