@@ -64,6 +64,7 @@ int WinMain(int argc, char* argv[])
 	});
 
 	Nz::Imgui::Instance()->Init(window);
+	ImGui::EnsureContextOnThisThread();
 	
 	MyImguiWindow mywindow;
 	float val = 0.f;
@@ -84,8 +85,21 @@ int WinMain(int argc, char* argv[])
 
 		float deltaTime = updateClock.GetElapsedTime().AsSeconds();
 		Nz::Imgui::Instance()->Update(window, deltaTime);
-		ImGui::EnsureContextOnThisThread();
 
+		if (ImGui::BeginMainMenuBar())
+		{
+			if (ImGui::BeginMenu("Test"))
+			{
+				if (ImGui::MenuItem("Test", "Ctrl+O"))
+					printf("test\n");
+				ImGui::EndMenu();
+			}
+			ImGui::EndMainMenuBar();
+		}
+		if (ImGui::BeginPopupModal("toto"))
+		{
+			ImGui::EndPopup();
+		}
 		ImGui::Begin("Loop Window");
 		ImGui::Image(logo.get());
 		ImGui::ImageButton(logo.get());
