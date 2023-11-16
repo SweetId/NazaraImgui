@@ -4,6 +4,7 @@
 #include <Nazara/Graphics/Graphics.hpp>
 #include <Nazara/Math/Rect.hpp>
 #include <NazaraImgui/Config.hpp>
+#include <NazaraImgui/ImguiDrawer.hpp>
 
 #include <imgui.h>
 #include <unordered_set>
@@ -11,8 +12,6 @@
 namespace Nz
 {
     class Cursor;
-    class RenderFrame;
-    class RenderTarget;
     class RenderWindow;
     class Texture;
     class Window;
@@ -39,6 +38,9 @@ namespace Nz
         void Update(Nz::Window& window, float dt);
         void Render(Nz::RenderTarget* renderTarget, Nz::RenderFrame& frame);
 
+        inline ImguiDrawer& GetImguiDrawer() { return m_imguiDrawer; }
+        inline const ImguiDrawer& GetImguiDrawer() const { return m_imguiDrawer; }
+
         // User-defined
         void AddHandler(ImguiHandler* handler);
         void RemoveHandler(ImguiHandler* handler);
@@ -63,11 +65,7 @@ namespace Nz
         std::shared_ptr<Nz::Cursor> GetMouseCursor(ImGuiMouseCursor cursorType);
         void UpdateMouseCursor(Nz::Window& window);
 
-        bool LoadTexturedPipeline();
-        bool LoadUntexturedPipeline();
         void UpdateFontTexture();
-
-        void RenderDrawLists(Nz::RenderTarget* renderTarget, Nz::RenderFrame& frame, ImDrawData* drawData);
 
         ImGuiContext* m_currentContext;
         std::string m_clipboardText;
@@ -75,23 +73,8 @@ namespace Nz
         bool m_bWindowHasFocus;
         bool m_bMouseMoved;
 
-        struct
-        {
-            std::shared_ptr<Nz::RenderPipeline> pipeline;
-            std::unordered_map<Nz::Texture*, Nz::ShaderBindingPtr> textureShaderBindings;
-            Nz::ShaderBindingPtr uboShaderBinding;
-            std::shared_ptr<Nz::TextureSampler> textureSampler;
-        } m_texturedPipeline;
-
-        struct
-        {
-            std::shared_ptr<Nz::RenderPipeline> pipeline;
-            Nz::ShaderBindingPtr uboShaderBinding;
-        } m_untexturedPipeline;
-
-        std::shared_ptr<Nz::RenderBuffer> m_uboBuffer;
+        ImguiDrawer m_imguiDrawer;
         std::shared_ptr<Nz::Texture> m_fontTexture;
-
         std::unordered_set<ImguiHandler*> m_handlers;
 
         static Imgui* s_instance;
