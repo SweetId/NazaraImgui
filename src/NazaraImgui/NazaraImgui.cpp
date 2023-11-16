@@ -103,7 +103,7 @@ namespace Nz
         // init rendering
         io.DisplaySize = ImVec2(window.GetSize().x * 1.f, window.GetSize().y * 1.f);
 
-        auto registry = Nz::Graphics::Instance()->GetFramePipelinePassRegistry();
+        auto& registry = Nz::Graphics::Instance()->GetFramePipelinePassRegistry();
         registry.RegisterPass<ImguiPipelinePass>("Imgui", { "Input" }, { "Output" });
 
         if (bLoadDefaultFont)
