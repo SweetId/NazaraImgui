@@ -58,6 +58,8 @@ namespace Nz
         static void GetAllocatorFunctions(ImGuiMemAllocFunc* allocFunc, ImGuiMemFreeFunc* freeFunc, void** userData);
 
     private:
+        void RenderInternal();
+
         void SetupInputs(Nz::WindowEventHandler& handler);
         void Update(const Nz::Vector2i& mousePosition, const Nz::Vector2ui& displaySize, float dt);
 
@@ -78,6 +80,8 @@ namespace Nz
         std::unordered_set<ImguiHandler*> m_handlers;
 
         static Imgui* s_instance;
+
+        friend class ImguiDrawer;
     };
 }
 

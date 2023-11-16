@@ -1,5 +1,7 @@
 #include <NazaraImgui/ImguiDrawer.hpp>
 
+#include <NazaraImgui/NazaraImgui.hpp>
+
 #include <Nazara/Renderer/CommandBufferBuilder.hpp>
 #include <Nazara/Renderer/RenderDevice.hpp>
 #include <Nazara/Renderer/RenderFrame.hpp>
@@ -64,6 +66,8 @@ namespace Nz
 
 	void ImguiDrawer::Prepare(RenderFrame& frame)
 	{
+        Nz::Imgui::Instance()->RenderInternal();
+
         m_drawCalls.clear();
 
         ImDrawData* drawData = ImGui::GetDrawData();

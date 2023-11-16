@@ -277,11 +277,6 @@ namespace Nz
 
     void Imgui::Render(Nz::RenderTarget* renderTarget, Nz::RenderFrame& frame)
     {
-        for (auto* handler : m_handlers)
-            handler->OnRenderImgui();
-
-        ImGui::Render();
-
         m_imguiDrawer.Prepare(frame);
 
         frame.Execute([this, renderTarget, &frame](Nz::CommandBufferBuilder& builder) {
@@ -298,6 +293,14 @@ namespace Nz
             builder.EndDebugRegion();
 
         }, Nz::QueueType::Graphics);
+    }
+
+    void Imgui::RenderInternal()
+    {
+        for (auto* handler : m_handlers)
+            handler->OnRenderImgui();
+
+        ImGui::Render();
     }
 
     void Imgui::AddHandler(ImguiHandler* handler)
