@@ -11,6 +11,7 @@ namespace Nz
 		FramePipelinePass({})
 		, m_passName(std::move(passName))
 	{
+		ImGui::EnsureContextOnThisThread();
 	}
 
 	void ImguiPipelinePass::Prepare(FrameData& frameData)
