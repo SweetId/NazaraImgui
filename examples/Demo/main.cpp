@@ -84,7 +84,7 @@ int WinMain(int argc, char* argv[])
 		}
 
 		float deltaTime = updateClock.GetElapsedTime().AsSeconds();
-		Nz::Imgui::Instance()->Update(window, deltaTime);
+		Nz::Imgui::Instance()->Update(deltaTime);
 
 		if (ImGui::BeginMainMenuBar())
 		{

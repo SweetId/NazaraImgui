@@ -114,21 +114,22 @@ namespace Nz
         SetupInputs(window.GetEventHandler());
 
         m_bWindowHasFocus = window.HasFocus();
+        m_window = &window;
         return true;
     }
 
-    void Imgui::Update(Nz::Window& window, float dt)
+    void Imgui::Update(float dt)
     {
         // Update OS/hardware mouse cursor if imgui isn't drawing a software cursor
-        UpdateMouseCursor(window);
+        UpdateMouseCursor(*m_window);
 
         if (m_bMouseMoved)
         {
-            Update(Nz::Mouse::GetPosition(window), window.GetSize(), dt);
+            Update(Nz::Mouse::GetPosition(*m_window), m_window->GetSize(), dt);
         }
         else
         {
-            Update({ 0,0 }, window.GetSize(), dt);
+            Update({ 0,0 }, m_window->GetSize(), dt);
         }
 
 #if UNFINISHED_WORK
