@@ -81,7 +81,7 @@ int WinMain(int argc, char* argv[])
 	
 	MyImguiWindow mywindow;
 	float val = 0.f;
-	float color[4] = { 1,0,0,1 };
+	float color[4] = { 0,1,0,1 };
 
 	Nz::MillisecondClock updateClock;
 
@@ -112,6 +112,7 @@ int WinMain(int argc, char* argv[])
 		ImGui::ImageButton(logo.get());
 		ImGui::SliderFloat("test", &val, 0, 10);
 		ImGui::ColorPicker4("Color", color, ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB);
+		cameraComponent.UpdateClearColor(Nz::Color(color[0], color[1], color[2], color[3])); // This will work, eventually (engine bug)
 
 		ImGui::InputFloat4("value from 2nd window", mywindow.values, "%.3f", ImGuiInputTextFlags_ReadOnly);
 		ImGui::End();
