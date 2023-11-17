@@ -66,8 +66,6 @@ namespace Nz
 
 	void ImguiDrawer::Prepare(RenderFrame& frame)
 	{
-        Nz::Imgui::Instance()->RenderInternal();
-
         m_drawCalls.clear();
 
         ImDrawData* drawData = ImGui::GetDrawData();

@@ -278,6 +278,7 @@ namespace Nz
 
     void Imgui::Render(Nz::RenderTarget* renderTarget, Nz::RenderFrame& frame)
     {
+        Render();
         m_imguiDrawer.Prepare(frame);
 
         frame.Execute([this, renderTarget, &frame](Nz::CommandBufferBuilder& builder) {
@@ -296,7 +297,7 @@ namespace Nz
         }, Nz::QueueType::Graphics);
     }
 
-    void Imgui::RenderInternal()
+    void Imgui::Render()
     {
         for (auto* handler : m_handlers)
             handler->OnRenderImgui();

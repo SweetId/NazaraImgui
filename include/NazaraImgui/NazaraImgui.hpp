@@ -36,6 +36,7 @@ namespace Nz
 
         bool Init(Nz::Window& window, bool bLoadDefaultFont = true);
         void Update(float dt);
+        void Render();
         void Render(Nz::RenderTarget* renderTarget, Nz::RenderFrame& frame);
 
         inline ImguiDrawer& GetImguiDrawer() { return m_imguiDrawer; }
