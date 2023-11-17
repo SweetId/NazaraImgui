@@ -45,17 +45,14 @@ passlist "Forward Passlist"
         output "Output" "Gamma"
     }
 
-    attachment "ImguiOutput"
+    attachmentproxy "ImguiOutput" "Gamma"
+
+    pass "Imgui"
     {
-        format "RGBA8"
-    }
-	
-	pass "Imgui"
-	{
         impl "Imgui"
         input "Input" "Gamma"
         output "Output" "ImguiOutput"
-	}
+    }
 
     output "ImguiOutput"
 }
