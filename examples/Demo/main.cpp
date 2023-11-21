@@ -109,7 +109,7 @@ int WinMain(int argc, char* argv[])
 		ImGui::InputFloat4("value from 2nd window", mywindow.values, "%.3f", ImGuiInputTextFlags_ReadOnly);
 		ImGui::End();
 
-		Nz::Imgui::Instance()->Render(&windowSwapchain, frame);
+		Nz::Imgui::Instance()->Render(windowSwapchain.GetSwapchain(), frame);
 
 		frame.Present();
 

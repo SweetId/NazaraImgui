@@ -63,7 +63,7 @@ int WinMain(int argc, char* argv[])
 	auto passList = Nz::PipelinePassList::LoadFromFile("example.passlist");
 	camera.emplace<Nz::NodeComponent>();
 
-	auto& cameraComponent = camera.emplace<Nz::CameraComponent>(&swapchain, passList, Nz::ProjectionType::Perspective);
+	auto& cameraComponent = camera.emplace<Nz::CameraComponent>(std::make_shared<Nz::RenderWindow>(swapchain), passList, Nz::ProjectionType::Perspective);
 	cameraComponent.UpdateFOV(70.f);
 	cameraComponent.UpdateClearColor(Nz::Color(0.46f, 0.48f, 0.84f, 1.f));
 

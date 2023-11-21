@@ -4,13 +4,12 @@
 
 #include <Nazara/Core/DynLib.hpp>
 #include <Nazara/Core/Log.hpp>
+#include <Nazara/Graphics/RenderTarget.hpp>
 #include <Nazara/Platform/Cursor.hpp>
 #include <Nazara/Platform/Clipboard.hpp>
 #include <Nazara/Platform/Window.hpp>
 #include <Nazara/Renderer/CommandBufferBuilder.hpp>
 #include <Nazara/Renderer/Renderer.hpp>
-#include <Nazara/Renderer/RenderTarget.hpp>
-#include <Nazara/Renderer/RenderTarget.hpp>
 #include <Nazara/Renderer/Texture.hpp>
 #include <NZSL/Parser.hpp>
 
@@ -276,7 +275,7 @@ namespace Nz
         ImGui::NewFrame();
     }
 
-    void Imgui::Render(Nz::RenderTarget* renderTarget, Nz::RenderFrame& frame)
+    void Imgui::Render(Nz::Swapchain* renderTarget, Nz::RenderFrame& frame)
     {
         Render();
         m_imguiDrawer.Prepare(frame);
