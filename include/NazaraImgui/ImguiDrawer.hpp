@@ -11,7 +11,7 @@ namespace Nz
 	class CommandBufferBuilder;
 	class RenderBuffer;
 	class RenderDevice;
-	class RenderFrame;
+	class RenderResources;
 	class RenderPipeline;
 
 	class NAZARA_IMGUI_API ImguiDrawer
@@ -25,9 +25,9 @@ namespace Nz
 		ImguiDrawer& operator=(const ImguiDrawer&) = delete;
 		ImguiDrawer& operator=(ImguiDrawer&&) = delete;
 
-		void Prepare(RenderFrame& renderFrame);
+		void Prepare(RenderResources& renderFrame);
 
-		void Reset(RenderFrame& renderFrame);
+		void Reset(RenderResources& renderFrame);
 
 		void Draw(CommandBufferBuilder& builder);
 	

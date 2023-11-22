@@ -64,7 +64,7 @@ namespace Nz
 		m_texturedPipeline.pipeline.reset();
 	}
 
-	void ImguiDrawer::Prepare(RenderFrame& frame)
+	void ImguiDrawer::Prepare(RenderResources& frame)
 	{
         m_drawCalls.clear();
 
@@ -191,7 +191,7 @@ namespace Nz
         }
     }
 
-    void ImguiDrawer::Reset(RenderFrame& renderFrame)
+    void ImguiDrawer::Reset(RenderResources& renderFrame)
     {
         m_drawCalls.clear();
     }

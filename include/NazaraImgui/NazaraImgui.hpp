@@ -39,7 +39,7 @@ namespace Nz
         bool Init(Nz::Window& window, bool bLoadDefaultFont = true);
         void Update(float dt);
         void Render();
-        void Render(Nz::Swapchain* renderTarget, Nz::RenderFrame& frame);
+        void Render(Nz::Swapchain* renderTarget, Nz::RenderResources& frame);
 
         inline ImguiDrawer& GetImguiDrawer() { return m_imguiDrawer; }
         inline const ImguiDrawer& GetImguiDrawer() const { return m_imguiDrawer; }

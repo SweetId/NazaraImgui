@@ -16,7 +16,7 @@ namespace Nz
 	void ImguiPipelinePass::Prepare(FrameData& frameData)
 	{
 		ImguiDrawer& imguiDrawer = Nz::Imgui::Instance()->GetImguiDrawer();
-		imguiDrawer.Prepare(frameData.renderFrame);
+		imguiDrawer.Prepare(frameData.renderResources);
 	}
 
 	FramePass& ImguiPipelinePass::RegisterToFrameGraph(FrameGraph& frameGraph, const PassInputOuputs& inputOuputs)

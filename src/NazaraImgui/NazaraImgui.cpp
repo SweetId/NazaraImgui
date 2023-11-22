@@ -275,7 +275,7 @@ namespace Nz
         ImGui::NewFrame();
     }
 
-    void Imgui::Render(Nz::Swapchain* renderTarget, Nz::RenderFrame& frame)
+    void Imgui::Render(Nz::Swapchain* renderTarget, Nz::RenderResources& frame)
     {
         Render();
         m_imguiDrawer.Prepare(frame);
@@ -288,7 +288,7 @@ namespace Nz
             Nz::Recti renderRect(0, 0, fb_width, fb_height);
 
             builder.BeginDebugRegion("ImGui", Nz::Color::Green());
-            builder.BeginRenderPass(renderTarget->GetFramebuffer(frame.GetFramebufferIndex()), renderTarget->GetRenderPass(), renderRect);
+            builder.BeginRenderPass(renderTarget->GetFramebuffer(frame.GetImageIndex()), renderTarget->GetRenderPass(), renderRect);
             m_imguiDrawer.Draw(builder);
             builder.EndRenderPass();
             builder.EndDebugRegion();
