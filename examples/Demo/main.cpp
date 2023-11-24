@@ -7,6 +7,8 @@
 #include <Nazara/Renderer/GpuSwitch.hpp>
 #include <Nazara/Renderer/WindowSwapchain.hpp>
 
+#include <NazaraImgui/ImguiHandler.hpp>
+#include <NazaraImgui/ImguiWidgets.hpp>
 #include <NazaraImgui/NazaraImgui.hpp>
 
 NAZARA_REQUEST_DEDICATED_GPU()

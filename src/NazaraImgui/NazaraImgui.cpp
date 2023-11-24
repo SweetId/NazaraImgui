@@ -1,6 +1,8 @@
 #include <NazaraImgui/NazaraImgui.hpp>
 #include <NazaraImgui/ImguiPipelinePass.hpp>
 #include <NazaraImgui/ImguiDrawer.hpp>
+#include <NazaraImgui/ImguiHandler.hpp>
+#include <NazaraImgui/ImguiWidgets.hpp>
 
 #include <Nazara/Core/DynLib.hpp>
 #include <Nazara/Core/Log.hpp>

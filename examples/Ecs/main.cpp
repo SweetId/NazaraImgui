@@ -5,6 +5,8 @@
 #include <Nazara/Renderer.hpp>
 #include <Nazara/Utility.hpp>
 
+#include <NazaraImgui/ImguiHandler.hpp>
+#include <NazaraImgui/ImguiWidgets.hpp>
 #include <NazaraImgui/NazaraImgui.hpp>
 
 NAZARA_REQUEST_DEDICATED_GPU()
