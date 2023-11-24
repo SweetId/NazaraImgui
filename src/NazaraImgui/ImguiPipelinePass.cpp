@@ -7,7 +7,7 @@
 
 namespace Nz
 {
-	ImguiPipelinePass::ImguiPipelinePass(PassData& passData, std::string passName, const ParameterList& /*parameters*/) :
+	ImguiPipelinePass::ImguiPipelinePass(PassData& /*passData*/, std::string passName, const ParameterList& /*parameters*/) :
 		FramePipelinePass({})
 		, m_passName(std::move(passName))
 	{

@@ -191,7 +191,7 @@ namespace Nz
         }
     }
 
-    void ImguiDrawer::Reset(RenderResources& renderFrame)
+    void ImguiDrawer::Reset(RenderResources& /*renderFrame*/)
     {
         m_drawCalls.clear();
     }
