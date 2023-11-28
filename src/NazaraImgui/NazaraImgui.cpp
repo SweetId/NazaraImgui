@@ -289,8 +289,13 @@ namespace Nz
             int fb_height = static_cast<int>(io.DisplaySize.y * io.DisplayFramebufferScale.y);
             Nz::Recti renderRect(0, 0, fb_width, fb_height);
 
+            Nz::CommandBufferBuilder::ClearValues clearValues[2] = {
+                { .color = Nz::Color::Black() },
+                { .depth = 1.f }
+            };
+
             builder.BeginDebugRegion("ImGui", Nz::Color::Green());
-            builder.BeginRenderPass(renderTarget->GetFramebuffer(frame.GetImageIndex()), renderTarget->GetRenderPass(), renderRect);
+            builder.BeginRenderPass(renderTarget->GetFramebuffer(frame.GetImageIndex()), renderTarget->GetRenderPass(), renderRect, clearValues, 2);
             m_imguiDrawer.Draw(builder);
             builder.EndRenderPass();
             builder.EndDebugRegion();
