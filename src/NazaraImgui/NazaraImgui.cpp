@@ -360,8 +360,8 @@ namespace Nz
         texParams.height = height;
         texParams.pixelFormat = Nz::PixelFormat::RGBA8;
         texParams.type = Nz::ImageType::E2D;
-        m_fontTexture = renderDevice->InstantiateTexture(texParams);
-        m_fontTexture->Update(pixels, width, height);
+        m_fontTexture = renderDevice->InstantiateTexture(texParams, pixels, true);
+        m_fontTexture->UpdateDebugName("FontTexture");
 
         ImTextureID textureID = m_fontTexture.get();
         io.Fonts->TexID = textureID;
