@@ -42,10 +42,7 @@ int main(int argc, char* argv[])
 int WinMain(int argc, char* argv[])
 #endif
 {
-	NazaraUnused(argc);
-	NazaraUnused(argv);
-
-	Nz::Application<Nz::Graphics, Nz::Imgui> nazara;
+	Nz::Application<Nz::Graphics, Nz::Imgui> nazara(argv, argc);
 	auto& windowing = nazara.AddComponent<Nz::AppWindowingComponent>();
 	std::shared_ptr<Nz::RenderDevice> device = Nz::Graphics::Instance()->GetRenderDevice();
 
