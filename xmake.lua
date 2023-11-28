@@ -51,7 +51,8 @@ elseif is_mode("releasedbg") then
 end
 
 target("NazaraImgui")
-	add_packages("nazara", "nzsl", "imgui", {public = true})
+	add_packages("nazara", {public = true, components = "graphics"})
+	add_packages("nzsl", "imgui", {public = true})
 	set_kind("$(kind)")
 	set_group("Libraries")
 	add_headerfiles("include/(NazaraImgui/**.hpp)")
