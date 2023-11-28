@@ -223,7 +223,7 @@ namespace Nz
         textureBinding.setIndex = 1;
         textureBinding.bindingIndex = 0;
         textureBinding.shaderStageFlags = nzsl::ShaderStageType::Fragment;
-        textureBinding.type = Nz::ShaderBindingType::Texture;
+        textureBinding.type = Nz::ShaderBindingType::Sampler;
 
         std::shared_ptr<Nz::RenderPipelineLayout> renderPipelineLayout = m_renderDevice.InstantiateRenderPipelineLayout(std::move(pipelineLayoutInfo));
 
