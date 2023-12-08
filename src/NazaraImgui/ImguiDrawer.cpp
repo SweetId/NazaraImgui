@@ -123,6 +123,8 @@ namespace Nz
             m_drawCalls.push_back(std::move(drawCall));
         }
 
+        frame.PushForRelease(std::move(m_vertexBuffer));
+        frame.PushForRelease(std::move(m_indexBuffer));
 
         // now that we have macro buffers, allocate them on gpu
         size_t size = vertices.size() * sizeof(Nz::VertexStruct_XYZ_Color_UV);
