@@ -69,7 +69,7 @@ namespace Nz
         m_drawCalls.clear();
 
         ImDrawData* drawData = ImGui::GetDrawData();
-        if (drawData->CmdListsCount == 0)
+        if (drawData == nullptr || drawData->CmdListsCount == 0)
             return;
 
 		ImGuiIO& io = ImGui::GetIO();
