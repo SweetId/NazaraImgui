@@ -21,10 +21,10 @@ namespace Nz
 
 	FramePass& ImguiPipelinePass::RegisterToFrameGraph(FrameGraph& frameGraph, const PassInputOuputs& inputOuputs)
 	{
-		if (inputOuputs.inputCount != 1)
+		if (inputOuputs.inputAttachments.size() != 1)
 			throw std::runtime_error("one input expected");
 
-		if (inputOuputs.outputCount != 1)
+		if (inputOuputs.outputAttachments.size() != 1)
 			throw std::runtime_error("one output expected");
 
 		FramePass& imguiPass = frameGraph.AddPass("Imgui pass");

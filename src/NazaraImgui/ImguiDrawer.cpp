@@ -2,11 +2,11 @@
 
 #include <NazaraImgui/NazaraImgui.hpp>
 
+#include <Nazara/Core/VertexStruct.hpp>
 #include <Nazara/Renderer/CommandBufferBuilder.hpp>
 #include <Nazara/Renderer/RenderDevice.hpp>
 #include <Nazara/Renderer/RenderFrame.hpp>
 #include <Nazara/Renderer/UploadPool.hpp>
-#include <Nazara/Utility/VertexStruct.hpp>
 
 
 #include <NZSL/Parser.hpp>
