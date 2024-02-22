@@ -3,7 +3,6 @@
 #include <Nazara/Graphics.hpp>
 #include <Nazara/Platform.hpp>
 #include <Nazara/Renderer.hpp>
-#include <Nazara/Utility.hpp>
 
 #include <NazaraImgui/ImguiHandler.hpp>
 #include <NazaraImgui/ImguiWidgets.hpp>
@@ -41,10 +40,10 @@ int WinMain(int argc, char* argv[])
 #endif
 {
 	Nz::Application<Nz::Graphics, Nz::Imgui> nazara(argc, argv);
-	auto& windowing = nazara.AddComponent<Nz::AppWindowingComponent>();
+	auto& windowing = nazara.AddComponent<Nz::WindowingAppComponent>();
 	std::shared_ptr<Nz::RenderDevice> device = Nz::Graphics::Instance()->GetRenderDevice();
 
-	auto& ecs = nazara.AddComponent<Nz::AppEntitySystemComponent>();
+	auto& ecs = nazara.AddComponent<Nz::EntitySystemAppComponent>();
 	auto& world = ecs.AddWorld<Nz::EnttWorld>();
 
 	auto& renderer = world.AddSystem<Nz::RenderSystem>();

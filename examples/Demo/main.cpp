@@ -2,8 +2,8 @@
 #include <Nazara/Core/Application.hpp>
 #include <Nazara/Core/Clock.hpp>
 #include <Nazara/Graphics/Graphics.hpp>
-#include <Nazara/Platform/AppWindowingComponent.hpp>
 #include <Nazara/Platform/Platform.hpp>
+#include <Nazara/Platform/WindowingAppComponent.hpp>
 #include <Nazara/Renderer/GpuSwitch.hpp>
 #include <Nazara/Renderer/WindowSwapchain.hpp>
 
@@ -43,7 +43,7 @@ int WinMain(int argc, char* argv[])
 #endif
 {
 	Nz::Application<Nz::Graphics, Nz::Imgui> nazara(argc, argv);
-	auto& windowing = nazara.AddComponent<Nz::AppWindowingComponent>();
+	auto& windowing = nazara.AddComponent<Nz::WindowingAppComponent>();
 	std::shared_ptr<Nz::RenderDevice> device = Nz::Graphics::Instance()->GetRenderDevice();
 
 	std::string windowTitle = "Nazara Imgui Demo";
