@@ -11,6 +11,7 @@ add_requires("nazaraengine", { alias = "nazara", debug = is_mode("debug") })
 add_requires("imgui v1.87-docking", { alias = "imgui" })
 
 add_includedirs("include", "src")
+set_exceptions("cxx")
 set_languages("c89", "c++20")
 set_rundir("./bin/$(plat)_$(arch)_$(mode)")
 set_targetdir("./bin/$(plat)_$(arch)_$(mode)")
