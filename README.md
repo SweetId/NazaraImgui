@@ -10,7 +10,7 @@ Sid - main developper
 
 ## How to Use
 
-```
+```cpp
 // Add NazaraImgui.hpp to your includes
 #include <NazaraImgui/NazaraImgui.hpp>
 
